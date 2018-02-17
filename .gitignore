@@ -32,3 +32,9 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+EzyVoxel/Library/
+
+EzyVoxel/Temp/ProcessJobs/
+
+EzyVoxel/Temp/
