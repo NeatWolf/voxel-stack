@@ -1,3 +1,6 @@
+using System;
+using System.Reflection;
+using UnityEngine;
 
 namespace VoxelLUT {
 
@@ -24,14 +27,19 @@ namespace VoxelLUT {
 
             for (int i = 0; i < MAX_LUT; i++) {
                 // this uses reflection to map a class name so we can generate it
-                string clazz = GetRefClassName(i);
+                string clazz = "VoxelLUT." + GetRefClassName(i);
 
                 // use reflection to invoke our anonymous class matching the name
                 // the Create() functionality once invoked will automatically add
                 // the block into the LUT table of this class. This is so we don't
                 // manually invoke and create classes who'se names are a pain to deal
                 // with already.
-                System.Type.GetType(clazz).GetMethod("Create").Invoke(null, null);
+                try {
+                    Type.GetType(clazz).GetMethod("Create", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
+                }
+                catch {
+                    Debug.LogError("BlockLUT::Failed to bind Class = " + clazz);
+                }
             }
         }
 
@@ -50,7 +58,7 @@ namespace VoxelLUT {
          * the block which has rendering information. The index is calculated
          * depending on the neighbours of the chunk and varies.
          */ 
-        public static BlockVisual LUT(int index) {
+        public static BlockVisual Get(int index) {
             return _LUT[index & BIT_MASK];
         }
 
@@ -58,7 +66,7 @@ namespace VoxelLUT {
          * Used to generate the pre-defined name of the class which we will be using
          * to dynamically invoke when this class is loaded first time. 
          */
-        private static string GetRefClassName(int index) {
+        public static string GetRefClassName(int index) {
             System.Text.StringBuilder builder = new System.Text.StringBuilder(12);
 
             builder.Append("Block_");

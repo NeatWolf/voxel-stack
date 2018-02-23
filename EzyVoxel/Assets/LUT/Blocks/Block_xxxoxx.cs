@@ -1,18 +1,18 @@
 /**
  * Class Skeleton Auto-Generated via VoxelBlockGenerator
- * CLASS Name = Block_oooooo
- * CLASS Hash = 0x0
+ * CLASS Name = Block_xxxoxx
+ * CLASS Hash = 0x37
  * BlockLUT Automatically Initialises this class for LUT purposes
  */
 namespace VoxelLUT {
-	public class Block_oooooo : BlockVisual {
+	public class Block_xxxoxx : BlockVisual {
 		// our triangles referencing pre-set vertices
 		private readonly int[] _triangles;
 
 		/**
 		 * Use the private initializer to generate the triangle indices
 		 */
-		private Block_oooooo() {
+		private Block_xxxoxx() {
 			// The default triangles gives a blocky look by default
 			_triangles = _DEFAULT_TRIANGLES;
 		}
@@ -32,7 +32,7 @@ namespace VoxelLUT {
 		 * Invoked Dynamically and Automatically via BlockLUT
 		 */
 		private static void Create() {
-			BlockLUT.Put(Block_oooooo.Hash, new Block_oooooo());
+			BlockLUT.Put(Block_xxxoxx.Hash, new Block_xxxoxx());
 		}
 
 		/**
@@ -41,7 +41,7 @@ namespace VoxelLUT {
 		 */
 		public static int Hash {
 			get {
-				return 0x0;
+				return 0x37;
 			}
 		}
 	}
