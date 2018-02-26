@@ -14,4 +14,9 @@ public class Test : MonoBehaviour {
 	void Update () {
 		
 	}
+
+    private void OnDrawGizmos()
+    {
+        BlockLUT.Get(0).OnDebug();
+    }
 }
