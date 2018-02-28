@@ -10,6 +10,7 @@ namespace EzyVoxel {
         private Mesh _mesh;
         private MeshRenderer _renderer;
         private MeshFilter _filter;
+        public Material defaultMat;
         
         // Use this for initialization
         void Start() {
@@ -18,6 +19,8 @@ namespace EzyVoxel {
             if (_renderer == null) {
                 _renderer = gameObject.AddComponent<MeshRenderer>();
             }
+
+            _renderer.material = defaultMat;
 
             _filter = gameObject.GetComponent<MeshFilter>();
 
@@ -28,29 +31,26 @@ namespace EzyVoxel {
             _mesh = new Mesh();
             _mesh.MarkDynamic();
             _mesh.vertices = VoxelChunk._VERTICES;
+            _mesh.normals = VoxelChunk._NORMALS;
             _mesh.uv = VoxelChunk._UVS;
 
             _filter.mesh = _mesh;
 
-            _chunk[5, 5, 5] = 1;
-            _chunk[2, 2, 2] = 1;
+            _chunk.Fill(1);
+
+            _chunk[5, 5, 5] = 0;
+            _chunk[6, 5, 5] = 0;
+            _chunk[4, 5, 5] = 0;
+            _chunk[5, 6, 5] = 0;
+            _chunk[5, 4, 5] = 0;
+            _chunk[5, 5, 6] = 0;
+            _chunk[5, 5, 4] = 0;
         }
 
         // Update is called once per frame
         void Update() {
             if (_chunk.IsDirty) {
-                List<int> _tris = new List<int>();
-
-                for (int x = 0; x < VoxelChunk.DIM_X; x++) {
-                    for (int y = 0; y < VoxelChunk.DIM_Y; y++) {
-                        for (int z = 0; z < VoxelChunk.DIM_Z; z++) {
-                            BlockLUT.Get(_chunk.Hash(x, y, z)).FillTriangles(_tris, Block.SIZE * VoxelChunk.CalculateIndex(x, y, z));
-                        }
-                    }
-                }
-
-                _mesh.triangles = _tris.ToArray();
-                _mesh.RecalculateNormals();
+                _mesh.triangles = _chunk.ComputeTriangles();
 
                 _chunk.Clear();
             }

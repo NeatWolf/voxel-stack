@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using UnityEditor;
+using System;
 
 /**
  * Represents Normalized pre-computed coordinates for
@@ -13,90 +14,89 @@ using UnityEditor;
  * triangles change.
  */
 namespace VoxelLUT {
+
     public sealed class Block {
-        public const int SIZE = 21;
 
-        // top side LUT
-        public const int V1 = 0;
-        public const int V2 = 1;
-        public const int V3 = 2;
-        public const int V4 = 3;
+        public const int SIZE = 54;
 
-        // bottom side LUT
-        public const int V5 = 4;
-        public const int V6 = 5;
-        public const int V7 = 6;
-        public const int V8 = 7;
-
-        // top sides (halfs)
-        public const int V12 = 8;
-        public const int V21 = 8;
-        public const int V23 = 9;
-        public const int V32 = 9;
-        public const int V34 = 10;
-        public const int V43 = 10;
-        public const int V14 = 11;
-        public const int V41 = 11;
-
-        // bottom side (halfs)
-        public const int V56 = 12;
-        public const int V65 = 12;
-        public const int V67 = 13;
-        public const int V76 = 13;
-        public const int V78 = 14;
-        public const int V87 = 14;
-        public const int V58 = 15;
-        public const int V85 = 15;
-
-        // left side (halfs)
-        public const int V15 = 16;
-        public const int V51 = 16;
-        public const int V26 = 17;
-        public const int V62 = 17;
-
-        // right side (halfs)
-        public const int V37 = 18;
-        public const int V73 = 18;
-        public const int V48 = 19;
-        public const int V84 = 19;
-
-        // center (halfs)
-        public const int VC = 20;
-
-        private static readonly Vector3[] _LUT;
+        private static readonly Vector3[] _POS;
         private static readonly Vector3[] _NOR;
 
+        /**
+         * Statically fill in our Vertices and Indices
+         * so we can reference them via pre-defined indices
+         * from 0-53 (Check Block.SIZE for maximum index size)
+         * Indices are encoded in the Enums for the Voxels
+         */
         static Block() {
-            _LUT = new Vector3[SIZE];
+            _POS = new Vector3[SIZE];
             _NOR = new Vector3[SIZE];
 
-            _LUT[V1] = new Vector3(0.0f, 1.0f, 0.0f);
-            _LUT[V2] = new Vector3(0.0f, 1.0f, 1.0f);
-            _LUT[V3] = new Vector3(1.0f, 1.0f, 1.0f);
-            _LUT[V4] = new Vector3(1.0f, 1.0f, 0.0f);
+            // front face
+            Front.v1.Add(ref _POS, ref _NOR);
+            Front.v2.Add(ref _POS, ref _NOR);
+            Front.v3.Add(ref _POS, ref _NOR);
+            Front.v4.Add(ref _POS, ref _NOR);
+            Front.v12.Add(ref _POS, ref _NOR);
+            Front.v23.Add(ref _POS, ref _NOR);
+            Front.v34.Add(ref _POS, ref _NOR);
+            Front.v14.Add(ref _POS, ref _NOR);
+            Front.vc.Add(ref _POS, ref _NOR);
 
-            _LUT[V5] = new Vector3(0.0f, 0.0f, 0.0f);
-            _LUT[V6] = new Vector3(0.0f, 0.0f, 1.0f);
-            _LUT[V7] = new Vector3(1.0f, 0.0f, 1.0f);
-            _LUT[V8] = new Vector3(1.0f, 0.0f, 0.0f);
+            // back face
+            Back.v1.Add(ref _POS, ref _NOR);
+            Back.v2.Add(ref _POS, ref _NOR);
+            Back.v3.Add(ref _POS, ref _NOR);
+            Back.v4.Add(ref _POS, ref _NOR);
+            Back.v12.Add(ref _POS, ref _NOR);
+            Back.v23.Add(ref _POS, ref _NOR);
+            Back.v34.Add(ref _POS, ref _NOR);
+            Back.v14.Add(ref _POS, ref _NOR);
+            Back.vc.Add(ref _POS, ref _NOR);
 
-            _LUT[V12] = new Vector3(0.0f, 1.0f, 0.5f);
-            _LUT[V23] = new Vector3(0.5f, 1.0f, 1.0f);
-            _LUT[V34] = new Vector3(1.0f, 1.0f, 0.5f);
-            _LUT[V14] = new Vector3(0.5f, 1.0f, 0.0f);
+            // left face
+            Left.v1.Add(ref _POS, ref _NOR);
+            Left.v2.Add(ref _POS, ref _NOR);
+            Left.v3.Add(ref _POS, ref _NOR);
+            Left.v4.Add(ref _POS, ref _NOR);
+            Left.v12.Add(ref _POS, ref _NOR);
+            Left.v23.Add(ref _POS, ref _NOR);
+            Left.v34.Add(ref _POS, ref _NOR);
+            Left.v14.Add(ref _POS, ref _NOR);
+            Left.vc.Add(ref _POS, ref _NOR);
 
-            _LUT[V56] = new Vector3(0.0f, 0.0f, 0.5f);
-            _LUT[V67] = new Vector3(0.5f, 0.0f, 1.0f);
-            _LUT[V78] = new Vector3(1.0f, 0.0f, 0.5f);
-            _LUT[V58] = new Vector3(0.5f, 0.0f, 0.0f);
+            // right face
+            Right.v1.Add(ref _POS, ref _NOR);
+            Right.v2.Add(ref _POS, ref _NOR);
+            Right.v3.Add(ref _POS, ref _NOR);
+            Right.v4.Add(ref _POS, ref _NOR);
+            Right.v12.Add(ref _POS, ref _NOR);
+            Right.v23.Add(ref _POS, ref _NOR);
+            Right.v34.Add(ref _POS, ref _NOR);
+            Right.v14.Add(ref _POS, ref _NOR);
+            Right.vc.Add(ref _POS, ref _NOR);
 
-            _LUT[V15] = new Vector3(0.0f, 0.5f, 0.0f);
-            _LUT[V26] = new Vector3(0.0f, 0.5f, 1.0f);
+            // up face
+            Up.v1.Add(ref _POS, ref _NOR);
+            Up.v2.Add(ref _POS, ref _NOR);
+            Up.v3.Add(ref _POS, ref _NOR);
+            Up.v4.Add(ref _POS, ref _NOR);
+            Up.v12.Add(ref _POS, ref _NOR);
+            Up.v23.Add(ref _POS, ref _NOR);
+            Up.v34.Add(ref _POS, ref _NOR);
+            Up.v14.Add(ref _POS, ref _NOR);
+            Up.vc.Add(ref _POS, ref _NOR);
 
-            _LUT[V37] = new Vector3(1.0f, 0.5f, 1.0f);
-            _LUT[V48] = new Vector3(1.0f, 0.5f, 0.0f);
-
-            _LUT[VC] = new Vector3(0.5f, 0.5f, 0.5f);
+            // down face
+            Down.v1.Add(ref _POS, ref _NOR);
+            Down.v2.Add(ref _POS, ref _NOR);
+            Down.v3.Add(ref _POS, ref _NOR);
+            Down.v4.Add(ref _POS, ref _NOR);
+            Down.v12.Add(ref _POS, ref _NOR);
+            Down.v23.Add(ref _POS, ref _NOR);
+            Down.v34.Add(ref _POS, ref _NOR);
+            Down.v14.Add(ref _POS, ref _NOR);
+            Down.vc.Add(ref _POS, ref _NOR);
         }
 
         /**
@@ -106,12 +106,21 @@ namespace VoxelLUT {
          */
         public static void FillVertex(Vector3 position, ref Vector3[] array, int startIndex) {
             for (int i = 0; i < SIZE; i++) {
-                array[startIndex++] = (_LUT[i] + position);
+                array[startIndex++] = (_POS[i] + position);
+            }
+        }
+
+        /**
+         * Fill the provided array with normal (direction) data, used for lighting.
+         */
+        public static void FillNormal(ref Vector3[] array, int startIndex) {
+            for (int i = 0; i < SIZE; i++) {
+                array[startIndex++] = (_NOR[i]);
             }
         }
 
         public static Vector3 Get(int index) {
-            return _LUT[index];
+            return _POS[index];
         }
 
         /**
@@ -119,7 +128,7 @@ namespace VoxelLUT {
          * Voxel itself.
          */
         public static void OnDebug() {
-#if UNITY_EDITOR
+#if !UNITY_EDITOR
             Color oldColor = Gizmos.color;
             Gizmos.color = Color.red;
 

@@ -5,11 +5,12 @@ using VoxelLUT;
 
 namespace EzyVoxel {
     public sealed class VoxelChunk {
-        public const int DIM_X = 14;
-        public const int DIM_Y = 14;
-        public const int DIM_Z = 14;
+        public const int DIM_X = 10;
+        public const int DIM_Y = 10;
+        public const int DIM_Z = 10;
 
         public const int VOXEL_COUNT = DIM_X * DIM_Y * DIM_Z;
+        public const int VOXEL_INDEX = VOXEL_COUNT - 1;
 
         public static readonly Vector3[] _VERTICES;
         public static readonly Vector3[] _NORMALS;
@@ -26,22 +27,25 @@ namespace EzyVoxel {
                 for (int y = 0; y < DIM_Y; y++) {
                     for (int z = 0; z < DIM_Z; z++) {
                         Block.FillVertex(new Vector3(x, y, z), ref _VERTICES, Block.SIZE * CalculateIndex(x, y, z));
+                        Block.FillNormal(ref _NORMALS, Block.SIZE * CalculateIndex(x, y, z));
                     }
                 }
             }
         }
 
         private readonly short[] voxels;
+        private readonly List<int> triangles;
         private bool isDirty;
 
         public VoxelChunk() {
             this.voxels = new short[VOXEL_COUNT];
             this.isDirty = true;
+            this.triangles = new List<int>();
         }
 
         public short this[int index] {
             get {
-                if (index < 0 || index > VOXEL_COUNT) {
+                if (index < 0 || index > VOXEL_INDEX) {
                     return 0;
                 }
 
@@ -83,12 +87,12 @@ namespace EzyVoxel {
 
             int hash = 0;
 
-            hash = hash | (((~up & (~up + 1)) >> 31) & 1 << 0);
-            hash = hash | (((~down & (~down + 1)) >> 31) & 1 << 1);
-            hash = hash | (((~left & (~left + 1)) >> 31) & 1 << 2);
-            hash = hash | (((~right & (~right + 1)) >> 31) & 1 << 3);
-            hash = hash | (((~front & (~front + 1)) >> 31) & 1 << 4);
-            hash = hash | (((~back & (~back + 1)) >> 31) & 1 << 5);
+            hash = hash | (((~up    & (~up      + 1)) >> 31) & 1 << 0);
+            hash = hash | (((~down  & (~down    + 1)) >> 31) & 1 << 1);
+            hash = hash | (((~left  & (~left    + 1)) >> 31) & 1 << 2);
+            hash = hash | (((~right & (~right   + 1)) >> 31) & 1 << 3);
+            hash = hash | (((~front & (~front   + 1)) >> 31) & 1 << 4);
+            hash = hash | (((~back  & (~back    + 1)) >> 31) & 1 << 5);
 
             return hash;
         }
@@ -101,6 +105,27 @@ namespace EzyVoxel {
             get {
                 return isDirty;
             }
+        }
+
+        public void Fill(short data) {
+            for (int i = 0; i < VOXEL_COUNT; i++) {
+                voxels[i] = data;
+            }
+        }
+
+        public int[] ComputeTriangles() {
+            for (int x = 0; x < DIM_X; x++) {
+                for (int y = 0; y < DIM_Y; y++) {
+                    for (int z = 0; z < DIM_Z; z++) {
+                        BlockLUT.Get(Hash(x, y, z)).FillTriangles(triangles, Block.SIZE * CalculateIndex(x, y, z));
+                    }
+                }
+            }
+
+            int[] triArray = triangles.ToArray();
+            triangles.Clear();
+
+            return triArray;
         }
 
         public void Clear() {

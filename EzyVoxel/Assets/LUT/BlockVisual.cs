@@ -14,35 +14,26 @@ namespace VoxelLUT {
          * This represents the default voxel type with rounded edges
          * look during rendering
          */
-        protected static readonly int[] _DEFAULT_TRIANGLES = 
+        protected static readonly int[] _DEFAULT_TRIANGLES =
         {
-            // top face
-            Block.V12, Block.V23, Block.V34,
-            Block.V12, Block.V34, Block.V14,
-            // back face
-            Block.V23, Block.V26, Block.V67,
-            Block.V23, Block.V67, Block.V37,
-            // right face
-            Block.V34, Block.V37, Block.V78,
-            Block.V34, Block.V78, Block.V48,
-            // front face
-            Block.V14, Block.V48, Block.V58,
-            Block.V14, Block.V58, Block.V15,
-            // left face
-            Block.V12, Block.V15, Block.V56,
-            Block.V12, Block.V56, Block.V26,
-            // bottom face
-            Block.V58, Block.V78, Block.V67,
-            Block.V58, Block.V67, Block.V56,
-            // corners
-            Block.V12, Block.V14, Block.V15,
-            Block.V21, Block.V26, Block.V23,
-            Block.V32, Block.V34, Block.V37,
-            Block.V41, Block.V48, Block.V43,
-            Block.V51, Block.V58, Block.V56,
-            Block.V62, Block.V67, Block.V65,
-            Block.V73, Block.V76, Block.V78,
-            Block.V84, Block.V87, Block.V85
+            // top triangles
+            Up.v1.Index(), Up.v2.Index(), Up.v3.Index(),
+            Up.v1.Index(), Up.v3.Index(), Up.v4.Index(),
+            // bottom triangles
+            Down.v1.Index(), Down.v2.Index(), Down.v3.Index(),
+            Down.v1.Index(), Down.v3.Index(), Down.v4.Index(),
+            // left triangles
+            Left.v1.Index(), Left.v2.Index(), Left.v3.Index(),
+            Left.v1.Index(), Left.v3.Index(), Left.v4.Index(),
+            // right triangles
+            Right.v1.Index(), Right.v2.Index(), Right.v3.Index(),
+            Right.v1.Index(), Right.v3.Index(), Right.v4.Index(),
+            // front triangles
+            Front.v1.Index(), Front.v2.Index(), Front.v3.Index(),
+            Front.v1.Index(), Front.v3.Index(), Front.v4.Index(),
+            // back triangles
+            Back.v1.Index(), Back.v2.Index(), Back.v3.Index(),
+            Back.v1.Index(), Back.v3.Index(), Back.v4.Index()
         };
 
         public abstract int[] Triangles { get; }
