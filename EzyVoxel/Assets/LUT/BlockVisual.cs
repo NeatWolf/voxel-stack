@@ -17,23 +17,39 @@ namespace VoxelLUT {
         protected static readonly int[] _DEFAULT_TRIANGLES =
         {
             // top triangles
-            Up.v1.Index(), Up.v2.Index(), Up.v3.Index(),
-            Up.v1.Index(), Up.v3.Index(), Up.v4.Index(),
+            Up.v12.Index(), Up.v23.Index(), Up.v34.Index(),
+            Up.v12.Index(), Up.v34.Index(), Up.v14.Index(),
             // bottom triangles
-            Down.v1.Index(), Down.v2.Index(), Down.v3.Index(),
-            Down.v1.Index(), Down.v3.Index(), Down.v4.Index(),
+            Down.v12.Index(), Down.v23.Index(), Down.v34.Index(),
+            Down.v12.Index(), Down.v34.Index(), Down.v14.Index(),
             // left triangles
-            Left.v1.Index(), Left.v2.Index(), Left.v3.Index(),
-            Left.v1.Index(), Left.v3.Index(), Left.v4.Index(),
+            Left.v12.Index(), Left.v23.Index(), Left.v34.Index(),
+            Left.v12.Index(), Left.v34.Index(), Left.v14.Index(),
             // right triangles
-            Right.v1.Index(), Right.v2.Index(), Right.v3.Index(),
-            Right.v1.Index(), Right.v3.Index(), Right.v4.Index(),
+            Right.v12.Index(), Right.v23.Index(), Right.v34.Index(),
+            Right.v12.Index(), Right.v34.Index(), Right.v14.Index(),
             // front triangles
-            Front.v1.Index(), Front.v2.Index(), Front.v3.Index(),
-            Front.v1.Index(), Front.v3.Index(), Front.v4.Index(),
+            Front.v12.Index(), Front.v23.Index(), Front.v34.Index(),
+            Front.v12.Index(), Front.v34.Index(), Front.v14.Index(),
             // back triangles
-            Back.v1.Index(), Back.v2.Index(), Back.v3.Index(),
-            Back.v1.Index(), Back.v3.Index(), Back.v4.Index()
+            Back.v12.Index(), Back.v23.Index(), Back.v34.Index(),
+            Back.v12.Index(), Back.v34.Index(), Back.v14.Index(),
+            // corner 1
+            Up.v12.Index(), Right.v23.Index(), Up.v23.Index(),
+            // corner 2
+            Up.v23.Index(), Right.v14.Index(), Up.v34.Index(),
+            // corner 3
+            Up.v34.Index(), Front.v14.Index(), Up.v14.Index(),
+            // corner 4
+            Up.v14.Index(), Left.v14.Index(), Up.v12.Index(),
+            // corner 5
+            Down.v12.Index(), Front.v23.Index(), Down.v23.Index(),
+            // corner 6
+            Down.v23.Index(), Right.v23.Index(), Down.v34.Index(),
+            // corner 7
+            Down.v34.Index(), Back.v14.Index(), Down.v14.Index(),
+            // corner 8
+            Down.v14.Index(), Front.v14.Index(), Down.v12.Index()
         };
 
         public abstract int[] Triangles { get; }
