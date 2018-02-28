@@ -8,6 +8,9 @@ namespace EzyVoxel {
         public const int DIM_X = 10;
         public const int DIM_Y = 10;
         public const int DIM_Z = 10;
+        public const int DIM_X_INDEX = DIM_X - 1;
+        public const int DIM_Y_INDEX = DIM_Y - 1;
+        public const int DIM_Z_INDEX = DIM_Z - 1;
 
         public const int VOXEL_COUNT = DIM_X * DIM_Y * DIM_Z;
         public const int VOXEL_INDEX = VOXEL_COUNT - 1;
@@ -45,7 +48,7 @@ namespace EzyVoxel {
 
         public short this[int index] {
             get {
-                if (index < 0 || index > VOXEL_INDEX) {
+                if (index < 0 || index >= VOXEL_COUNT) {
                     return 0;
                 }
 
@@ -78,27 +81,33 @@ namespace EzyVoxel {
                 return Block_xxxxxx.Hash;
             }
 
-            int up = this[x, y + 1, z];
-            int down = this[x, y - 1, z];
-            int left = this[x - 1, y, z];
-            int right = this[x + 1, y, z];
-            int front = this[x, y, z - 1];
-            int back = this[x, y, z + 1];
+            //x & 0x80000000
+
+            int up = this[x, y+1, z];
+            int down = this[x, y-1, z];
+            int left = this[x-1, y, z];
+            int right = this[x+1, y, z];
+            int front = this[x, y, z-1];
+            int back = this[x, y, z+1];
 
             int hash = 0;
 
-            hash = hash | (((~up    & (~up      + 1)) >> 31) & 1 << 0);
-            hash = hash | (((~down  & (~down    + 1)) >> 31) & 1 << 1);
-            hash = hash | (((~left  & (~left    + 1)) >> 31) & 1 << 2);
-            hash = hash | (((~right & (~right   + 1)) >> 31) & 1 << 3);
-            hash = hash | (((~front & (~front   + 1)) >> 31) & 1 << 4);
-            hash = hash | (((~back  & (~back    + 1)) >> 31) & 1 << 5);
+            hash = hash | ((((~up    & (~up      + 1)) >> 31) & 1) << 0);
+            hash = hash | ((((~down  & (~down    + 1)) >> 31) & 1) << 1);
+            hash = hash | ((((~left  & (~left    + 1)) >> 31) & 1) << 2);
+            hash = hash | ((((~right & (~right   + 1)) >> 31) & 1) << 3);
+            hash = hash | ((((~front & (~front   + 1)) >> 31) & 1) << 4);
+            hash = hash | ((((~back  & (~back    + 1)) >> 31) & 1) << 5);
 
             return hash;
         }
 
         public static int CalculateIndex(int x, int y, int z) {
-            return x + DIM_X * (y + DIM_Y * z);
+            if (x > DIM_X_INDEX || y > DIM_Y_INDEX || z > DIM_Z_INDEX || x < 0 || y < 0 || z < 0) {
+                return -1;
+            }
+
+            return x + DIM_X * (y + DIM_Z * z);
         }
 
         public bool IsDirty {
@@ -111,6 +120,8 @@ namespace EzyVoxel {
             for (int i = 0; i < VOXEL_COUNT; i++) {
                 voxels[i] = data;
             }
+
+            isDirty = true;
         }
 
         public int[] ComputeTriangles() {
