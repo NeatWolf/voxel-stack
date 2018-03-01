@@ -37,6 +37,7 @@ namespace EzyVoxel {
 
              _chunk.Fill(1023);
 
+            /*
             _chunk[0, 0, 0] = 0;
             _chunk[9, 0, 0] = 0;
             _chunk[0, 9, 0] = 0;
@@ -45,15 +46,7 @@ namespace EzyVoxel {
             _chunk[0, 9, 9] = 0;
             _chunk[9, 9, 0] = 0;
             _chunk[9, 9, 9] = 0;
-
-
-            _chunk[5, 5, 5] = 0;
-            _chunk[6, 5, 5] = 0;
-            _chunk[4, 5, 5] = 0;
-            _chunk[5, 6, 5] = 0;
-            _chunk[5, 4, 5] = 0;
-            _chunk[5, 5, 6] = 0;
-            _chunk[5, 5, 4] = 0;
+            */
         }
 
         // Update is called once per frame
