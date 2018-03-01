@@ -29,14 +29,13 @@ namespace EzyVoxel {
             }
 
             _mesh = new Mesh();
-            _mesh.MarkDynamic();
             _mesh.vertices = VoxelChunk._VERTICES;
             _mesh.normals = VoxelChunk._NORMALS;
             _mesh.uv = VoxelChunk._UVS;
 
             _filter.mesh = _mesh;
 
-             _chunk.Fill(1);
+             _chunk.Fill(1023);
 
             _chunk[0, 0, 0] = 0;
             _chunk[9, 0, 0] = 0;
@@ -55,9 +54,6 @@ namespace EzyVoxel {
             _chunk[5, 4, 5] = 0;
             _chunk[5, 5, 6] = 0;
             _chunk[5, 5, 4] = 0;
-
-
-            //_chunk[4, 4, 4] = 1;
         }
 
         // Update is called once per frame
