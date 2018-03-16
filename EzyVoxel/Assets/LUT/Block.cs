@@ -17,7 +17,10 @@ namespace VoxelLUT {
 
     public sealed class Block {
 
-        public const int SIZE = 54;
+        /**
+         * We have 4 vertices per face, 6 faces = 24 maximum size
+         */
+        public const int SIZE = 24;
 
         private static readonly Vector3[] _POS;
         private static readonly Vector3[] _NOR;
@@ -37,66 +40,36 @@ namespace VoxelLUT {
             Front.v2.Add(ref _POS, ref _NOR);
             Front.v3.Add(ref _POS, ref _NOR);
             Front.v4.Add(ref _POS, ref _NOR);
-            Front.v12.Add(ref _POS, ref _NOR);
-            Front.v23.Add(ref _POS, ref _NOR);
-            Front.v34.Add(ref _POS, ref _NOR);
-            Front.v14.Add(ref _POS, ref _NOR);
-            Front.vc.Add(ref _POS, ref _NOR);
 
             // back face
             Back.v1.Add(ref _POS, ref _NOR);
             Back.v2.Add(ref _POS, ref _NOR);
             Back.v3.Add(ref _POS, ref _NOR);
             Back.v4.Add(ref _POS, ref _NOR);
-            Back.v12.Add(ref _POS, ref _NOR);
-            Back.v23.Add(ref _POS, ref _NOR);
-            Back.v34.Add(ref _POS, ref _NOR);
-            Back.v14.Add(ref _POS, ref _NOR);
-            Back.vc.Add(ref _POS, ref _NOR);
 
             // left face
             Left.v1.Add(ref _POS, ref _NOR);
             Left.v2.Add(ref _POS, ref _NOR);
             Left.v3.Add(ref _POS, ref _NOR);
             Left.v4.Add(ref _POS, ref _NOR);
-            Left.v12.Add(ref _POS, ref _NOR);
-            Left.v23.Add(ref _POS, ref _NOR);
-            Left.v34.Add(ref _POS, ref _NOR);
-            Left.v14.Add(ref _POS, ref _NOR);
-            Left.vc.Add(ref _POS, ref _NOR);
 
             // right face
             Right.v1.Add(ref _POS, ref _NOR);
             Right.v2.Add(ref _POS, ref _NOR);
             Right.v3.Add(ref _POS, ref _NOR);
             Right.v4.Add(ref _POS, ref _NOR);
-            Right.v12.Add(ref _POS, ref _NOR);
-            Right.v23.Add(ref _POS, ref _NOR);
-            Right.v34.Add(ref _POS, ref _NOR);
-            Right.v14.Add(ref _POS, ref _NOR);
-            Right.vc.Add(ref _POS, ref _NOR);
 
             // up face
             Up.v1.Add(ref _POS, ref _NOR);
             Up.v2.Add(ref _POS, ref _NOR);
             Up.v3.Add(ref _POS, ref _NOR);
             Up.v4.Add(ref _POS, ref _NOR);
-            Up.v12.Add(ref _POS, ref _NOR);
-            Up.v23.Add(ref _POS, ref _NOR);
-            Up.v34.Add(ref _POS, ref _NOR);
-            Up.v14.Add(ref _POS, ref _NOR);
-            Up.vc.Add(ref _POS, ref _NOR);
 
             // down face
             Down.v1.Add(ref _POS, ref _NOR);
             Down.v2.Add(ref _POS, ref _NOR);
             Down.v3.Add(ref _POS, ref _NOR);
             Down.v4.Add(ref _POS, ref _NOR);
-            Down.v12.Add(ref _POS, ref _NOR);
-            Down.v23.Add(ref _POS, ref _NOR);
-            Down.v34.Add(ref _POS, ref _NOR);
-            Down.v14.Add(ref _POS, ref _NOR);
-            Down.vc.Add(ref _POS, ref _NOR);
         }
 
         /**
@@ -127,73 +100,107 @@ namespace VoxelLUT {
          * Unity3D Editor only debug to visualize all the points and the
          * Voxel itself.
          */
-        public static void OnDebug() {
-#if !UNITY_EDITOR
+        public static void OnDebug(Vector3 position) {
+#if UNITY_EDITOR
             Color oldColor = Gizmos.color;
+
+            Vector3[] lut = new Vector3[SIZE];
+
+            FillVertex(position + new Vector3(0.0f, 0.0f, -0.1f), ref lut, 0);
+
+            // draw front face points
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(lut[Front.v1.Index()], 0.02f);
             Gizmos.color = Color.red;
-
-            // draw all the points
-            for (int i = 0; i < SIZE; i++) {
-                Gizmos.DrawSphere(_LUT[i], 0.02f);
-            }
-
-            Gizmos.color = Color.green;
-
-            // draw the top face
-            Gizmos.DrawLine(_LUT[V1], _LUT[V2]);
-            Gizmos.DrawLine(_LUT[V2], _LUT[V3]);
-            Gizmos.DrawLine(_LUT[V3], _LUT[V4]);
-            Gizmos.DrawLine(_LUT[V4], _LUT[V1]);
-
-            // draw the bottom face
-            Gizmos.DrawLine(_LUT[V5], _LUT[V6]);
-            Gizmos.DrawLine(_LUT[V6], _LUT[V7]);
-            Gizmos.DrawLine(_LUT[V7], _LUT[V8]);
-            Gizmos.DrawLine(_LUT[V8], _LUT[V5]);
-
-            // draw the corners
-            Gizmos.DrawLine(_LUT[V1], _LUT[V5]);
-            Gizmos.DrawLine(_LUT[V2], _LUT[V6]);
-            Gizmos.DrawLine(_LUT[V3], _LUT[V7]);
-            Gizmos.DrawLine(_LUT[V4], _LUT[V8]);
+            Gizmos.DrawSphere(lut[Front.v2.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Front.v3.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Front.v4.Index()], 0.02f);
 
             Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(lut[Front.v1.Index()], lut[Front.v2.Index()]);
+            Gizmos.DrawLine(lut[Front.v2.Index()], lut[Front.v3.Index()]);
+            Gizmos.DrawLine(lut[Front.v3.Index()], lut[Front.v4.Index()]);
+            Gizmos.DrawLine(lut[Front.v4.Index()], lut[Front.v1.Index()]);
 
-            // draw top face (mid sections)
-            Gizmos.DrawLine(_LUT[V12], _LUT[V23]);
-            Gizmos.DrawLine(_LUT[V23], _LUT[V34]);
-            Gizmos.DrawLine(_LUT[V34], _LUT[V14]);
-            Gizmos.DrawLine(_LUT[V14], _LUT[V12]);
+            FillVertex(position + new Vector3(0.0f, 0.0f, 0.1f), ref lut, 0);
 
-            // draw bottom face (mid sections)
-            Gizmos.DrawLine(_LUT[V56], _LUT[V67]);
-            Gizmos.DrawLine(_LUT[V67], _LUT[V78]);
-            Gizmos.DrawLine(_LUT[V78], _LUT[V58]);
-            Gizmos.DrawLine(_LUT[V58], _LUT[V56]);
+            // draw back face points
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(lut[Back.v1.Index()], 0.02f);
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(lut[Back.v2.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Back.v3.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Back.v4.Index()], 0.02f);
 
-            // draw front face (mid sections)
-            Gizmos.DrawLine(_LUT[V15], _LUT[V14]);
-            Gizmos.DrawLine(_LUT[V14], _LUT[V48]);
-            Gizmos.DrawLine(_LUT[V48], _LUT[V58]);
-            Gizmos.DrawLine(_LUT[V58], _LUT[V15]);
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(lut[Back.v1.Index()], lut[Back.v2.Index()]);
+            Gizmos.DrawLine(lut[Back.v2.Index()], lut[Back.v3.Index()]);
+            Gizmos.DrawLine(lut[Back.v3.Index()], lut[Back.v4.Index()]);
+            Gizmos.DrawLine(lut[Back.v4.Index()], lut[Back.v1.Index()]);
 
-            // draw back face (mid sections)
-            Gizmos.DrawLine(_LUT[V23], _LUT[V37]);
-            Gizmos.DrawLine(_LUT[V37], _LUT[V67]);
-            Gizmos.DrawLine(_LUT[V67], _LUT[V26]);
-            Gizmos.DrawLine(_LUT[V26], _LUT[V23]);
+            FillVertex(position + new Vector3(-0.1f, 0.0f, 0.0f), ref lut, 0);
 
-            // draw right face (mid sections)
-            Gizmos.DrawLine(_LUT[V37], _LUT[V78]);
-            Gizmos.DrawLine(_LUT[V78], _LUT[V48]);
-            Gizmos.DrawLine(_LUT[V48], _LUT[V34]);
-            Gizmos.DrawLine(_LUT[V34], _LUT[V37]);
+            // draw left face points
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(lut[Left.v1.Index()], 0.02f);
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(lut[Left.v2.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Left.v3.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Left.v4.Index()], 0.02f);
 
-            // draw left face (mid sections)
-            Gizmos.DrawLine(_LUT[V12], _LUT[V26]);
-            Gizmos.DrawLine(_LUT[V26], _LUT[V56]);
-            Gizmos.DrawLine(_LUT[V56], _LUT[V15]);
-            Gizmos.DrawLine(_LUT[V15], _LUT[V12]);
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawLine(lut[Left.v1.Index()], lut[Left.v2.Index()]);
+            Gizmos.DrawLine(lut[Left.v2.Index()], lut[Left.v3.Index()]);
+            Gizmos.DrawLine(lut[Left.v3.Index()], lut[Left.v4.Index()]);
+            Gizmos.DrawLine(lut[Left.v4.Index()], lut[Left.v1.Index()]);
+
+            FillVertex(position + new Vector3(0.1f, 0.0f, 0.0f), ref lut, 0);
+
+            // draw right face points
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(lut[Right.v1.Index()], 0.02f);
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(lut[Right.v2.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Right.v3.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Right.v4.Index()], 0.02f);
+
+            Gizmos.color = Color.white;
+            Gizmos.DrawLine(lut[Right.v1.Index()], lut[Right.v2.Index()]);
+            Gizmos.DrawLine(lut[Right.v2.Index()], lut[Right.v3.Index()]);
+            Gizmos.DrawLine(lut[Right.v3.Index()], lut[Right.v4.Index()]);
+            Gizmos.DrawLine(lut[Right.v4.Index()], lut[Right.v1.Index()]);
+
+            FillVertex(position + new Vector3(0.0f, 0.1f, 0.0f), ref lut, 0);
+
+            // draw up face points
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(lut[Up.v1.Index()], 0.02f);
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(lut[Up.v2.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Up.v3.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Up.v4.Index()], 0.02f);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(lut[Up.v1.Index()], lut[Up.v2.Index()]);
+            Gizmos.DrawLine(lut[Up.v2.Index()], lut[Up.v3.Index()]);
+            Gizmos.DrawLine(lut[Up.v3.Index()], lut[Up.v4.Index()]);
+            Gizmos.DrawLine(lut[Up.v4.Index()], lut[Up.v1.Index()]);
+
+            FillVertex(position + new Vector3(0.0f, -0.1f, 0.0f), ref lut, 0);
+
+            // draw down face points
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(lut[Down.v1.Index()], 0.02f);
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(lut[Down.v2.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Down.v3.Index()], 0.02f);
+            Gizmos.DrawSphere(lut[Down.v4.Index()], 0.02f);
+
+            Gizmos.color = Color.black;
+            Gizmos.DrawLine(lut[Down.v1.Index()], lut[Down.v2.Index()]);
+            Gizmos.DrawLine(lut[Down.v2.Index()], lut[Down.v3.Index()]);
+            Gizmos.DrawLine(lut[Down.v3.Index()], lut[Down.v4.Index()]);
+            Gizmos.DrawLine(lut[Down.v4.Index()], lut[Down.v1.Index()]);
 
             Gizmos.color = oldColor;
 #endif

@@ -10,9 +10,9 @@ namespace EzyVoxel {
      * setting/unsetting and calculating hash indices for rendering purposes.
      */
     public sealed class VoxelChunk : HexaLink {
-        public const int DIM_X = 10;
-        public const int DIM_Y = 10;
-        public const int DIM_Z = 10;
+        public const int DIM_X = 13;
+        public const int DIM_Y = 13;
+        public const int DIM_Z = 13;
         public const int DIM_X_INDEX = DIM_X - 1;
         public const int DIM_Y_INDEX = DIM_Y - 1;
         public const int DIM_Z_INDEX = DIM_Z - 1;
@@ -66,6 +66,24 @@ namespace EzyVoxel {
                     }
                 }
             }
+        }
+
+        /**
+         * Provided a raw/encoded voxel value, compute it's hash value
+         * and return it. Hash values occupy 6 bits of information 
+         * in total
+         */
+        public static int HashValue(short voxelData) {
+            return (voxelData & VOXEL_HEXA_MASK) >> 10;
+        }
+
+        /**
+         * Provided a raw/encoded voxel value, compute it's voxel value
+         * and return it. Voxel values occpy 10 bits of information
+         * in total
+         */
+        public static int VoxelValue(short voxelData) {
+            return voxelData & VOXEL_VALUE_MAX;
         }
 
         /**
@@ -187,37 +205,31 @@ namespace EzyVoxel {
                     if (posX > -1) {
                         short val = voxels[posX];
                         voxels[posX] = (short)(incomingValue > 0 ? (val | 1 << 11) : (val & ~(1 << 11)));
-                        //Debug.Log("posX = " + x + " " + y + " " + z + " - " + ToBitString(voxels[posX]));
                     }
 
                     if (negX > -1) {
                         short val = voxels[negX];
                         voxels[negX] = (short)(incomingValue > 0 ? (val | 1 << 10) : (val & ~(1 << 10)));
-                        //Debug.Log("negX = " + x + " " + y + " " + z + " - " + ToBitString(voxels[negX]));
                     }
 
                     if (posY > -1) {
                         short val = voxels[posY];
                         voxels[posY] = (short)(incomingValue > 0 ? (val | 1 << 13) : (val & ~(1 << 13)));
-                        //Debug.Log("posY = " + x + " " + y + " " + z + " - " + ToBitString(voxels[posY]));
                     }
 
                     if (negY > -1) {
                         short val = voxels[negY];
                         voxels[negY] = (short)(incomingValue > 0 ? (val | 1 << 12) : (val & ~(1 << 12)));
-                        //Debug.Log("negY = " + x + " " + y + " " + z + " - " + ToBitString(voxels[negY]));
                     }
 
                     if (posZ > -1) {
                         short val = voxels[posZ];
                         voxels[posZ] = (short)(incomingValue > 0 ? (val | 1 << 15) : (val & ~(1 << 15)));
-                        //Debug.Log("posZ = " + x + " " + y + " " + z + " - " + ToBitString(voxels[posZ]));
                     }
 
                     if (negZ > -1) {
                         short val = voxels[negZ];
                         voxels[negZ] = (short)(incomingValue > 0 ? (val | 1 << 14) : (val & ~(1 << 14)));
-                        //Debug.Log("negZ = " + x + " " + y + " " + z + " - " + ToBitString(voxels[negZ]));
                     }
                 }
 
@@ -225,6 +237,8 @@ namespace EzyVoxel {
                 // the block was already set and was being changed, in which case we don't
                 // need to do anything to the neighbours
                 voxels[index] = (short)(incomingValue | (currentData & VOXEL_HEXA_MASK));
+
+                isDirty = true;
             }
         }
 
@@ -233,7 +247,7 @@ namespace EzyVoxel {
          * which can be used to perform a Voxel Lookup from one of the global
          * Lookup Tables for rendering purposes.
          */
-        public int Hash(int x, int y, int z) {
+        public int HashValue(int x, int y, int z) {
             short curr = this[x, y, z];
 
             // our voxel is zero, we don't need to render anything
@@ -295,7 +309,7 @@ namespace EzyVoxel {
             for (int x = 0; x < DIM_X; x++) {
                 for (int y = 0; y < DIM_Y; y++) {
                     for (int z = 0; z < DIM_Z; z++) {
-                        BlockLUT.Get(Hash(x, y, z)).FillTriangles(triangles, Block.SIZE * CalculateLocalIndex(x, y, z));
+                        BlockLUT.Get(HashValue(x, y, z)).FillTriangles(triangles, Block.SIZE * CalculateLocalIndex(x, y, z));
                     }
                 }
             }
@@ -314,6 +328,124 @@ namespace EzyVoxel {
             isDirty = false;
         }
 
+        /**
+         * Performs a raycast against the voxel structure in as efficient manner as
+         * possible. Will return the index of the voxel which was first hit and was non
+         * zero voxel. Function will return -1 if no voxels were hit.
+         */
+        public int PickVoxel(Ray ray, float distance, ref Vector3 voxel_position) {
+            Vector3 origin = ray.origin;
+            Vector3 dir = ray.direction;
+
+            float x1 = origin.x - WorldPosX;
+            float y1 = origin.y - WorldPosY;
+            float z1 = origin.z - WorldPosZ;
+
+            float x2 = (origin.x + dir.x * distance) - WorldPosX;
+            float y2 = (origin.y + dir.y * distance) - WorldPosY;
+            float z2 = (origin.z + dir.z * distance) - WorldPosZ;
+
+            int i = Mathf.FloorToInt(x1 / 1);
+            int j = Mathf.FloorToInt(y1 / 1);
+            int k = Mathf.FloorToInt(z1 / 1);
+
+            /*
+            int i = Mathf.FloorToInt(x1 / DIM_X);
+            int j = Mathf.FloorToInt(y1 / DIM_Y);
+            int k = Mathf.FloorToInt(z1 / DIM_Z);
+            */
+
+            int iend = Mathf.FloorToInt(x2 / 1);
+            int jend = Mathf.FloorToInt(y2 / 1);
+            int kend = Mathf.FloorToInt(z2 / 1);
+
+            /*
+            int iend = Mathf.FloorToInt(x2 / DIM_X);
+            int jend = Mathf.FloorToInt(y2 / DIM_Y);
+            int kend = Mathf.FloorToInt(z2 / DIM_Z);
+            */
+
+            int di = ((x1 < x2) ? 1 : ((x1 > x2) ? -1 : 0));
+            int dj = ((y1 < y2) ? 1 : ((y1 > y2) ? -1 : 0));
+            int dk = ((z1 < z2) ? 1 : ((z1 > z2) ? -1 : 0));
+
+            /*
+            float minx = DIM_X * Mathf.Floor(x1 / DIM_X);
+            float maxx = minx + DIM_X;
+            */
+            float minx = 1 * Mathf.Floor(x1 / 1);
+            float maxx = minx + 1;
+            float tx = ((x1 > x2) ? (x1 - minx) : (maxx - x1)) / Mathf.Abs(x2 - x1);
+            /*
+            float miny = DIM_Y * Mathf.Floor(y1 / DIM_Y);
+            float maxy = miny + DIM_Y;
+            */
+            float miny = 1 * Mathf.Floor(y1 / 1);
+            float maxy = miny + 1;
+            float ty = ((y1 > y2) ? (y1 - miny) : (maxy - y1)) / Mathf.Abs(y2 - y1);
+            /*
+            float minz = DIM_Z * Mathf.Floor(z1 / DIM_Z);
+            float maxz = minz + DIM_Z;
+            */
+            float minz = 1 * Mathf.Floor(z1 / 1);
+            float maxz = minz + 1;
+            float tz = ((z1 > z2) ? (z1 - minz) : (maxz - z1)) / Mathf.Abs(z2 - z1);
+
+            /*
+            float deltatx = DIM_X / Mathf.Abs(x2 - x1);
+            float deltaty = DIM_Y / Mathf.Abs(y2 - y1);
+            float deltatz = DIM_Z / Mathf.Abs(z2 - z1);
+            */
+
+
+            float deltatx = 1 / Mathf.Abs(x2 - x1);
+            float deltaty = 1 / Mathf.Abs(y2 - y1);
+            float deltatz = 1 / Mathf.Abs(z2 - z1);
+
+
+            while (true) {
+                int index = CalculateLocalIndex(i, j, k);
+
+                int val = VoxelValue(this[index]);
+
+                if (val > 0) {
+                    voxel_position.x = i + WorldPosX;
+                    voxel_position.y = j + WorldPosY;
+                    voxel_position.z = k + WorldPosZ;
+
+                    return index;
+                }
+
+                if (tx <= ty && tx <= tz) {
+                    if (i == iend) {
+                        return -1;
+                    }
+
+                    tx += deltatx;
+                    i += di;
+                }
+                else if (ty <= tx && ty <= tz) {
+                    if (j == jend) {
+                        return -1;
+                    }
+
+                    ty += deltaty;
+                    j += dj;
+                }
+                else {
+                    if (k == kend) {
+                        return -1;
+                    }
+
+                    tz += deltatz;
+                    k += dk;
+                }
+            }
+        }
+
+        /**
+         * Override to print the current state of all voxels
+         */
         public override string ToString() {
             System.Text.StringBuilder builder = new System.Text.StringBuilder();
 
@@ -327,26 +459,12 @@ namespace EzyVoxel {
 
                         int vox = v | (n << 10);
 
-                        builder.AppendLine("[" + x + "," + y + "," + z + "] V = " + ToBitString(v) + " N = " + ToBitString(n) + " VOX = " + ToBitString(vox));
+                        builder.AppendLine("[" + x + "," + y + "," + z + "] V = " + BitUtil.GetBitStringShort(v) + " N = " + BitUtil.GetBitStringShort(n) + " VOX = " + BitUtil.GetBitStringShort(vox));
                     }
                 }
             }
 
             return builder.ToString();
-        }
-
-        public static string ToBitString(int data) {
-            System.Text.StringBuilder builder = new System.Text.StringBuilder();
-
-            for (int i = 0; i < 16; i++) {
-                builder.Append(GetBit(data, i) ? 1 : 0);
-            }
-
-            return builder.ToString();
-        }
-
-        public static bool GetBit(int data, int pos) {
-            return ((data >> pos) & 1) == 1;
         }
     }
 }

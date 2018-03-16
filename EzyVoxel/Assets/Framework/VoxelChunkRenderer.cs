@@ -11,6 +11,11 @@ namespace EzyVoxel {
         private MeshRenderer _renderer;
         private MeshFilter _filter;
         public Material defaultMat;
+
+        public Vector3 voxel_position = new Vector3();
+        public int last_rayindex = -1;
+
+        public List<Vector3> pos = new List<Vector3>();
         
         // Use this for initialization
         void Start() {
@@ -36,21 +41,33 @@ namespace EzyVoxel {
             _filter.mesh = _mesh;
 
              _chunk.Fill(1023);
-
-            /*
-            _chunk[0, 0, 0] = 0;
-            _chunk[9, 0, 0] = 0;
-            _chunk[0, 9, 0] = 0;
-            _chunk[0, 0, 9] = 0;
-            _chunk[9, 0, 9] = 0;
-            _chunk[0, 9, 9] = 0;
-            _chunk[9, 9, 0] = 0;
-            _chunk[9, 9, 9] = 0;
-            */
         }
 
         // Update is called once per frame
         void Update() {
+            UpdateRenderer();
+
+            if (Camera.current == null) {
+                return;
+            }
+
+            Ray ray = Camera.current.ScreenPointToRay(Input.mousePosition);
+
+            int index = _chunk.PickVoxel(ray, 1000.0f, ref voxel_position);
+
+            if (Input.GetButtonDown("Fire1")) {
+                _chunk[(int)voxel_position.x, (int)voxel_position.y, (int)voxel_position.z] = 0;
+                pos.Add(new Vector3(voxel_position.x, voxel_position.y, voxel_position.z));
+            }
+
+            if (index != last_rayindex) {
+                Debug.Log(BitUtil.GetBitStringShort(VoxelChunk.HashValue(_chunk[index])));
+
+                last_rayindex = index;
+            }
+        }
+
+        public void UpdateRenderer() {
             if (_chunk.IsDirty) {
                 _mesh.triangles = _chunk.ComputeTriangles();
 
@@ -62,6 +79,14 @@ namespace EzyVoxel {
             get {
                 return _chunk;
             }
+        }
+
+        public void OnDrawGizmos() {
+            for (int i = 0; i < pos.Count; i++) {
+                Block.OnDebug(pos[i]);
+            }
+
+            Block.OnDebug(voxel_position);
         }
     }
 }

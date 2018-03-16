@@ -10,12 +10,14 @@ namespace VoxelLUT {
      * time, the LUT table will be built and ready for access.
      */
     public sealed class BlockLUT {
+        // the maximum number of bits in use for the LUT
+        public const int MAX_BITS = 6;
         // the number of bits we will use, which is 6 bits
         // making a possible unsigned combination of 2 ^ 6 (64) values
-        public const int MAX_LUT = 1 << 6;
+        public const int MAX_LUT = 1 << MAX_BITS;
 
-        // represents 111111 bit sequence
-        public const int BIT_MASK = 0x3F;
+        // represents 111111 bit sequence for masking purposes
+        public const int BIT_MASK = ~(~0 << MAX_BITS);
 
         // the primary LUT table which identifies how a certain
         // block will be rendered according to how it's neighbour
@@ -67,18 +69,16 @@ namespace VoxelLUT {
          * to dynamically invoke when this class is loaded first time. 
          */
         public static string GetRefClassName(int index) {
-            System.Text.StringBuilder builder = new System.Text.StringBuilder(12);
+            // maximum string is "Block_".length + MAX_BITS
+            System.Text.StringBuilder builder = new System.Text.StringBuilder(6 + MAX_BITS);
 
             builder.Append("Block_");
 
             // write o or x depending if the requested bit
             // is 1 or a 0
-            builder.Append((index & (1 << 0)) == 0 ? "o" : "x");
-            builder.Append((index & (1 << 1)) == 0 ? "o" : "x");
-            builder.Append((index & (1 << 2)) == 0 ? "o" : "x");
-            builder.Append((index & (1 << 3)) == 0 ? "o" : "x");
-            builder.Append((index & (1 << 4)) == 0 ? "o" : "x");
-            builder.Append((index & (1 << 5)) == 0 ? "o" : "x");
+            for (int i = 0; i < MAX_BITS; i++) {
+                builder.Append((index & (1 << i)) == 0 ? "o" : "x");
+            }
 
             return builder.ToString();
         }
