@@ -82,9 +82,9 @@ namespace EzyVoxel {
         }
 
         public void OnDrawGizmos() {
-            for (int i = 0; i < pos.Count; i++) {
+            /*for (int i = 0; i < pos.Count; i++) {
                 Block.OnDebug(pos[i]);
-            }
+            }*/
 
             Block.OnDebug(voxel_position);
         }
