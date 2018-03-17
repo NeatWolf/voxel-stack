@@ -18,7 +18,8 @@ namespace VoxelLUT {
 		private Block_xxxxxx() {
 			// The default triangles gives a blocky look by default
 			// define the specific block triangles below
-			_triangles = new int[0];
+			_triangles = new int[] {
+			};
 		}
 
 		/**

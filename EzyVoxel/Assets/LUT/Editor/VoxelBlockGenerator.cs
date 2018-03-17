@@ -57,7 +57,9 @@ public class VoxelBlockGenerator : EditorWindow {
                 outfile.WriteLine("\t\tprivate " + name + "() {");
                 outfile.WriteLine("\t\t\t// The default triangles gives a blocky look by default");
                 outfile.WriteLine("\t\t\t// define the specific block triangles below");
-                outfile.WriteLine("\t\t\t_triangles = _DEFAULT_TRIANGLES;");
+
+                GenerateTrianglesForIndex(outfile, index);
+
                 outfile.WriteLine("\t\t}");
                 outfile.WriteLine("");
 
@@ -96,5 +98,40 @@ public class VoxelBlockGenerator : EditorWindow {
             }
         }
         AssetDatabase.Refresh();
+    }
+
+    static void GenerateTrianglesForIndex(StreamWriter writer, int index) {
+        int[] _i = new int[] 
+        {
+            (index & (1 << 0)),
+            (index & (1 << 1)),
+            (index & (1 << 2)),
+            (index & (1 << 3)),
+            (index & (1 << 4)),
+            (index & (1 << 5))
+        };
+
+        string[] _t = new string[]
+        {
+            "Right", 
+            "Left", 
+            "Up", 
+            "Down", 
+            "Back", 
+            "Front"
+        };
+
+        writer.WriteLine("\t\t\t_triangles = new int[] {");
+
+        for (int i = 0; i < _i.Length; i++) {
+            if (_i[i] == 0) {
+                string typ = _t[i];
+
+                writer.WriteLine("\t\t\t\t" + typ + ".v1.Index(), " + typ + ".v2.Index(), " + typ + ".v3.Index(),");
+                writer.WriteLine("\t\t\t\t" + typ + ".v1.Index(), " + typ + ".v3.Index(), " + typ + ".v4.Index(),");
+            }
+        }
+
+        writer.WriteLine("\t\t\t};");
     }
 }

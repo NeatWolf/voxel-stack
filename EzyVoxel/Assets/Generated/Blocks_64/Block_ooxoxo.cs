@@ -18,7 +18,16 @@ namespace VoxelLUT {
 		private Block_ooxoxo() {
 			// The default triangles gives a blocky look by default
 			// define the specific block triangles below
-			_triangles = _DEFAULT_TRIANGLES;
+			_triangles = new int[] {
+				Right.v1.Index(), Right.v2.Index(), Right.v3.Index(),
+				Right.v1.Index(), Right.v3.Index(), Right.v4.Index(),
+				Left.v1.Index(), Left.v2.Index(), Left.v3.Index(),
+				Left.v1.Index(), Left.v3.Index(), Left.v4.Index(),
+				Down.v1.Index(), Down.v2.Index(), Down.v3.Index(),
+				Down.v1.Index(), Down.v3.Index(), Down.v4.Index(),
+				Front.v1.Index(), Front.v2.Index(), Front.v3.Index(),
+				Front.v1.Index(), Front.v3.Index(), Front.v4.Index(),
+			};
 		}
 
 		/**
