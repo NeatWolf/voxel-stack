@@ -9,32 +9,6 @@ namespace VoxelLUT {
      * blocks to implement certain functions.
      */
     public abstract class BlockVisual {
-
-        /**
-         * This represents the default voxel type with cube edges
-         * during rendering.
-         */
-        protected static readonly int[] _DEFAULT_TRIANGLES =
-        {
-            Up.v1.Index(), Up.v2.Index(), Up.v3.Index(),
-            Up.v1.Index(), Up.v3.Index(), Up.v4.Index(),
-
-            Down.v1.Index(), Down.v2.Index(), Down.v3.Index(),
-            Down.v1.Index(), Down.v3.Index(), Down.v4.Index(),
-
-            Left.v1.Index(), Left.v2.Index(), Left.v3.Index(),
-            Left.v1.Index(), Left.v3.Index(), Left.v4.Index(),
-
-            Right.v1.Index(), Right.v2.Index(), Right.v3.Index(),
-            Right.v1.Index(), Right.v3.Index(), Right.v4.Index(),
-
-            Front.v1.Index(), Front.v2.Index(), Front.v3.Index(),
-            Front.v1.Index(), Front.v3.Index(), Front.v4.Index(),
-
-            Back.v1.Index(), Back.v2.Index(), Back.v3.Index(),
-            Back.v1.Index(), Back.v3.Index(), Back.v4.Index(),
-        };
-
         public abstract int[] Triangles { get; }
 
         /**
