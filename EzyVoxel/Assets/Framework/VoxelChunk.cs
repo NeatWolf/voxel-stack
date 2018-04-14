@@ -202,19 +202,14 @@ namespace EzyVoxel {
                     // bit index 15
                     int negZ = CalculateLocalIndex(x, y, z - 1);
 
-                    if (posX > -1) {
-                        short val = voxels[posX];
-                        voxels[posX] = (short)(incomingValue > 0 ? (val | 1 << 11) : (val & ~(1 << 11)));
-                    }
-
                     if (negX > -1) {
                         short val = voxels[negX];
                         voxels[negX] = (short)(incomingValue > 0 ? (val | 1 << 10) : (val & ~(1 << 10)));
                     }
 
-                    if (posY > -1) {
-                        short val = voxels[posY];
-                        voxels[posY] = (short)(incomingValue > 0 ? (val | 1 << 13) : (val & ~(1 << 13)));
+                    if (posX > -1) {
+                        short val = voxels[posX];
+                        voxels[posX] = (short)(incomingValue > 0 ? (val | 1 << 11) : (val & ~(1 << 11)));
                     }
 
                     if (negY > -1) {
@@ -222,14 +217,19 @@ namespace EzyVoxel {
                         voxels[negY] = (short)(incomingValue > 0 ? (val | 1 << 12) : (val & ~(1 << 12)));
                     }
 
-                    if (posZ > -1) {
-                        short val = voxels[posZ];
-                        voxels[posZ] = (short)(incomingValue > 0 ? (val | 1 << 15) : (val & ~(1 << 15)));
+                    if (posY > -1) {
+                        short val = voxels[posY];
+                        voxels[posY] = (short)(incomingValue > 0 ? (val | 1 << 13) : (val & ~(1 << 13)));
                     }
 
                     if (negZ > -1) {
                         short val = voxels[negZ];
                         voxels[negZ] = (short)(incomingValue > 0 ? (val | 1 << 14) : (val & ~(1 << 14)));
+                    }
+
+                    if (posZ > -1) {
+                        short val = voxels[posZ];
+                        voxels[posZ] = (short)(incomingValue > 0 ? (val | 1 << 15) : (val & ~(1 << 15)));
                     }
                 }
 
@@ -396,7 +396,6 @@ namespace EzyVoxel {
             float deltaty = DIM_Y / Mathf.Abs(y2 - y1);
             float deltatz = DIM_Z / Mathf.Abs(z2 - z1);
             */
-
 
             float deltatx = 1 / Mathf.Abs(x2 - x1);
             float deltaty = 1 / Mathf.Abs(y2 - y1);

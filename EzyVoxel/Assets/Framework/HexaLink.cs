@@ -26,37 +26,37 @@ namespace EzyVoxel {
 
         public VoxelChunk PosY {
             get {
-                return null;
+                return IsAttached ? _world[LocalPosX, LocalPosY + 1, LocalPosZ] : null;
             }
         }
 
         public VoxelChunk NegY {
             get {
-                return null;
+                return IsAttached ? _world[LocalPosX, LocalPosY - 1, LocalPosZ] : null;
             }
         }
 
         public VoxelChunk PosX {
             get {
-                return null;
+                return IsAttached ? _world[LocalPosX + 1, LocalPosY, LocalPosZ] : null;
             }
         }
 
         public VoxelChunk NegX {
             get {
-                return null;
+                return IsAttached ? _world[LocalPosX - 1, LocalPosY, LocalPosZ] : null;
             }
         }
 
         public VoxelChunk PosZ {
             get {
-                return null;
+                return IsAttached ? _world[LocalPosX, LocalPosY, LocalPosZ + 1] : null;
             }
         }
 
         public VoxelChunk NegZ {
             get {
-                return null;
+                return IsAttached ? _world[LocalPosX, LocalPosY, LocalPosZ - 1] : null;
             }
         }
 

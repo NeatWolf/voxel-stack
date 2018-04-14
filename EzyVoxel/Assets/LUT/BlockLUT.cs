@@ -69,10 +69,12 @@ namespace VoxelLUT {
          * to dynamically invoke when this class is loaded first time. 
          */
         public static string GetRefClassName(int index) {
-            // maximum string is "Block_".length + MAX_BITS
-            System.Text.StringBuilder builder = new System.Text.StringBuilder(6 + MAX_BITS);
+            string offset = "Block_";
 
-            builder.Append("Block_");
+            // maximum string is "Block_".length + MAX_BITS
+            System.Text.StringBuilder builder = new System.Text.StringBuilder(offset.Length + MAX_BITS);
+
+            builder.Append(offset);
 
             // write o or x depending if the requested bit
             // is 1 or a 0
