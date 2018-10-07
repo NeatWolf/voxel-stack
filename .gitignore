@@ -42,3 +42,9 @@ EzyVoxel/Temp/
 EzyVoxel/\.vs/EzyVoxel/xs/UserPrefs\.xml
 
 \.DS_Store
+
+*.lock
+
+EzyVoxel/\.vs/EzyVoxel/xs/sqlite3/
+
+EzyVoxel/obj/Debug/

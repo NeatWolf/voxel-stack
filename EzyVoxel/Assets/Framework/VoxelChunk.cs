@@ -202,35 +202,68 @@ namespace EzyVoxel {
                     // bit index 15
                     int negZ = CalculateLocalIndex(x, y, z - 1);
 
-                    if (negX > -1) {
-                        short val = voxels[negX];
-                        voxels[negX] = (short)(incomingValue > 0 ? (val | 1 << 10) : (val & ~(1 << 10)));
-                    }
+					if (incomingValue > 0) {
+						if (negX > -1) {
+							short val = voxels[negX];
+							voxels[negX] = (short)(val | 1 << 10);
+						}
 
-                    if (posX > -1) {
-                        short val = voxels[posX];
-                        voxels[posX] = (short)(incomingValue > 0 ? (val | 1 << 11) : (val & ~(1 << 11)));
-                    }
+						if (posX > -1) {
+							short val = voxels[posX];
+							voxels[posX] = (short)(val | 1 << 11);
+						}
 
-                    if (negY > -1) {
-                        short val = voxels[negY];
-                        voxels[negY] = (short)(incomingValue > 0 ? (val | 1 << 12) : (val & ~(1 << 12)));
-                    }
+						if (negY > -1) {
+							short val = voxels[negY];
+							voxels[negY] = (short)(val | 1 << 12);
+						}
 
-                    if (posY > -1) {
-                        short val = voxels[posY];
-                        voxels[posY] = (short)(incomingValue > 0 ? (val | 1 << 13) : (val & ~(1 << 13)));
-                    }
+						if (posY > -1) {
+							short val = voxels[posY];
+							voxels[posY] = (short)(val | 1 << 13);
+						}
 
-                    if (negZ > -1) {
-                        short val = voxels[negZ];
-                        voxels[negZ] = (short)(incomingValue > 0 ? (val | 1 << 14) : (val & ~(1 << 14)));
-                    }
+						if (negZ > -1) {
+							short val = voxels[negZ];
+							voxels[negZ] = (short)(val | 1 << 14);
+						}
 
-                    if (posZ > -1) {
-                        short val = voxels[posZ];
-                        voxels[posZ] = (short)(incomingValue > 0 ? (val | 1 << 15) : (val & ~(1 << 15)));
-                    }
+						if (posZ > -1) {
+							short val = voxels[posZ];
+							voxels[posZ] = (short)(val | 1 << 15);
+						}
+					}
+					else {
+						if (negX > -1) {
+                            short val = voxels[negX];
+                            voxels[negX] = (short)(val & ~(1 << 10));
+                        }
+
+                        if (posX > -1) {
+                            short val = voxels[posX];
+                            voxels[posX] = (short)(val & ~(1 << 11));
+                        }
+
+                        if (negY > -1) {
+                            short val = voxels[negY];
+                            voxels[negY] = (short)(val & ~(1 << 12));
+                        }
+
+                        if (posY > -1) {
+                            short val = voxels[posY];
+                            voxels[posY] = (short)(val & ~(1 << 13));
+                        }
+
+                        if (negZ > -1) {
+                            short val = voxels[negZ];
+                            voxels[negZ] = (short)(val & ~(1 << 14));
+                        }
+
+                        if (posZ > -1) {
+                            short val = voxels[posZ];
+                            voxels[posZ] = (short)(val & ~(1 << 15));
+                        }
+					}
                 }
 
                 // otherwise the incoming value was either 0 being unset or
