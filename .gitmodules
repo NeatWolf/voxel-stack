@@ -1,0 +1,3 @@
+[submodule "EzyVoxel/Assets/External"]
+	path = EzyVoxel/Assets/External
+	url = https://github.com/DavidArayan/BitStack.git
