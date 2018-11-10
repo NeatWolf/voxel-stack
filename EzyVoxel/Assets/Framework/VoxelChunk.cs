@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using VoxelLUT;
+using BitStack;
 
 namespace EzyVoxel {
     /**
@@ -491,7 +492,7 @@ namespace EzyVoxel {
 
                         int vox = v | (n << 10);
 
-                        builder.AppendLine("[" + x + "," + y + "," + z + "] V = " + BitUtil.GetBitStringShort(v) + " N = " + BitUtil.GetBitStringShort(n) + " VOX = " + BitUtil.GetBitStringShort(vox));
+                        builder.AppendLine("[" + x + "," + y + "," + z + "] V = " + ((short)v).BitString() + " N = " + ((short)n).BitString() + " VOX = " + ((short)vox).BitString());
                     }
                 }
             }

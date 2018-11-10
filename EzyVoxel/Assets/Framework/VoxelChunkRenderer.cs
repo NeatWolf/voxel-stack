@@ -61,7 +61,7 @@ namespace EzyVoxel {
             }
 
             if (index != last_rayindex) {
-                Debug.Log(BitUtil.GetBitStringShort(VoxelChunk.HashValue(_chunk[index])));
+                //Debug.Log(BitUtil.GetBitStringShort(VoxelChunk.HashValue(_chunk[index])));
 
                 last_rayindex = index;
             }
