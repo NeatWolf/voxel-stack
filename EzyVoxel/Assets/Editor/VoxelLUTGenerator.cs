@@ -46,7 +46,7 @@ public class VoxelLUTGenerator : EditorWindow {
 	 * All the required face normals for each voxel face.
 	 * we will be going for a "Blocky" Voxel look
 	 */
-	private static Vector3[] VOXEL_NORMALS = {
+	private static Vector3[] VERTEX_NORMALS = {
 		// front
 		new Vector3(0.0f, 0.0f, -1.0f),
 		// back
@@ -60,6 +60,8 @@ public class VoxelLUTGenerator : EditorWindow {
 		// down
 		new Vector3(0.0f, -1.0f, 0.0f)
 	};
+	
+	public bool includeComments = true;
 
 	[MenuItem("VoxelStack/LUTGenerator")]	
 	public static void ShowWindow() {
@@ -70,15 +72,16 @@ public class VoxelLUTGenerator : EditorWindow {
 		GUILayout.BeginArea(new Rect(0, 0, 300, 600));
 		EditorGUILayout.HelpBox("This tool is used to generate a LUT table for the VoxelStack Compute Shader.", MessageType.None);
 		EditorGUILayout.LabelField("Maximum Number of Variations: " + ("00111111".ByteFromBitString(0) + 1));
+		includeComments = EditorGUILayout.Toggle("Include Debug Comments", includeComments);
 		
 		if (GUILayout.Button("Generate LUT Tables")) {
-			GenerateLUTClass();
+			GenerateLUTClass(includeComments);
 		}
 		
 		GUILayout.EndArea();
 	}
 	
-	static void GenerateLUTClass() {
+	static void GenerateLUTClass(bool includeComments) {
 		string copyFolder = "Assets/Generated";
 		string copyPath = copyFolder + "/GeneratedVoxelTable.cs";
 		
@@ -91,13 +94,56 @@ public class VoxelLUTGenerator : EditorWindow {
 		if (File.Exists(copyPath) == false) {
 			using (StreamWriter outfile = new StreamWriter(copyPath)) {
 				outfile.Write("using UnityEngine;\n\n");
-				outfile.Write("public sealed class GeneratedVoxelTable {\n\n");
-				outfile.Write("\tpublic static Vector3[] VOXEL_LUT = {\n");
+				outfile.Write("namespace VoxelStackLUT {\n\n");
+				outfile.Write("\tpublic sealed class GeneratedVoxelTable {\n\n");
+				outfile.Write("\t\tprivate static readonly Vector3[] VERTEX_LUT = {\n");
+				
+				int[] lutIndices = new int[64];
+				
+				int currentCount = 0;
+				int previousCount = 0;
+				
 				for (int i = 0; i < 64; i++) {
-					outfile.Write("\t\t// ----------------- \n");
-					GenerateVerticesForIndex(outfile, i);
+					if (includeComments) {
+						outfile.Write("\t\t\t// ----------------- \n");
+					}
+					
+					int count = GenerateVerticesForIndex(outfile, i, includeComments);
+					
+					currentCount += previousCount;
+					previousCount = count;
+					
+					lutIndices[i] = currentCount;
 				}
-				outfile.Write("\t};\n");
+				
+				outfile.Write("\t\t};\n\n");
+				
+				outfile.Write("\t\tprivate static readonly Vector3[] NORMAL_LUT = {\n");
+				
+				for (int i = 0; i < 64; i++) {
+					if (includeComments) {
+						outfile.Write("\t\t\t// ----------------- \n");
+					}
+					
+					GenerateNormalsForIndex(outfile, i, includeComments);
+				}
+				
+				outfile.Write("\t\t};\n\n");
+				
+				outfile.Write("\t\tprivate static readonly int[] INDEX_LUT = {\n");
+				outfile.Write("\t\t\t");
+				
+				for (int i = 0; i < lutIndices.Length; i++) {
+					outfile.Write(lutIndices[i] + ",");
+				}
+				
+				outfile.Write((currentCount + previousCount) + "\n");
+				
+				outfile.Write("\t\t};\n\n");
+				
+				GenerateFunctions(outfile);
+				
+				outfile.Write("\t}\n");
 				outfile.Write("}");
 			}
 		}
@@ -105,7 +151,31 @@ public class VoxelLUTGenerator : EditorWindow {
 		AssetDatabase.Refresh();
 	}
 	
-	static int GenerateVerticesForIndex(StreamWriter writer, int voxelValue) {
+	static void GenerateFunctions(StreamWriter writer) {
+		writer.Write("\t\tpublic static Vector3[] VertexTable {\n");
+		writer.Write("\t\t\tget {\n");
+		writer.Write("\t\t\t\treturn VERTEX_LUT;\n");
+		writer.Write("\t\t\t}\n");
+		writer.Write("\t\t}\n\n");
+		
+		writer.Write("\t\tpublic static Vector3[] NormalTable {\n");
+		writer.Write("\t\t\tget {\n");
+		writer.Write("\t\t\t\treturn NORMAL_LUT;\n");
+		writer.Write("\t\t\t}\n");
+		writer.Write("\t\t}\n\n");
+		
+		writer.Write("\t\tpublic static int[] IndexTable {\n");
+		writer.Write("\t\t\tget {\n");
+		writer.Write("\t\t\t\treturn INDEX_LUT;\n");
+		writer.Write("\t\t\t}\n");
+		writer.Write("\t\t}\n");
+	}
+	
+	static void GenerateNormalsForIndex(StreamWriter writer, int voxelValue, bool includeComments) {
+		GenerateVerticesForIndex(writer, voxelValue, includeComments, false);
+	}
+	
+	static int GenerateVerticesForIndex(StreamWriter writer, int voxelValue, bool includeComments, bool verts = true) {
 		int[] lutIndex = {
 			voxelValue.BitAt(0),
 			voxelValue.BitAt(1),
@@ -124,54 +194,77 @@ public class VoxelLUTGenerator : EditorWindow {
 			"Down"
 		};
 		
-		writer.Write("\t\t");
-		writer.Write("// Voxel Value='" 
-		+ voxelValue 
-		+ "' Hex='" 
-		+ voxelValue.HexString() 
-		+ "' Bin='"
-		+ ((byte)voxelValue).BitString()
-		+ "' Faces='"
-		+ voxelValue.PopCount()
-		+ "'\n");
+		if (includeComments) {
+			writer.Write("\t\t\t");
+			writer.Write("// Voxel Value='" 
+			+ voxelValue 
+			+ "' Hex='" 
+			+ voxelValue.HexString() 
+			+ "' Bin='"
+			+ ((byte)voxelValue).BitString()
+			+ "' Faces='"
+			+ voxelValue.PopCount()
+			+ "'\n");
+		}
+		
+		int count = 0;
 		
 		for (int i = 0; i < lutIndex.Length; i++) {
-			writer.Write("\t\t\t");
-			writer.Write("// LUT Bit Index='" + i + "' Face='" + lutNames[i] + "' State='" + (lutIndex[i] == 0 ? "ON" : "OFF") + "'\n");
-			writer.Write("\t\t\t");
+			if (includeComments) {
+				writer.Write("\t\t\t\t");
+				writer.Write("// LUT Bit Index='" + i + "' Face='" + lutNames[i] + "' State='" + (lutIndex[i] == 0 ? "ON" : "OFF") + "'\n");
+			}
 			
 			if (lutIndex[i] == 0) {
+				writer.Write("\t\t\t");
+				
+				if (includeComments) {
+					writer.Write("\t");
+				}
+				
 				int[] faceIndices = VOXEL_FACES[i];
-				Vector3 faceNormals = VOXEL_NORMALS[i];
 				
 				for (int vIndex = 0; vIndex < faceIndices.Length - 1; vIndex++) {
-					Vector3 vertex = VERTEX_LUT[faceIndices[vIndex]];
+					Vector3 vertex = verts == true ? VERTEX_LUT[faceIndices[vIndex]] : VERTEX_NORMALS[i];
 					writer.Write("new Vector3(");
 					writer.Write(floatS(vertex.x) + ",");
 					writer.Write(floatS(vertex.y) + ",");
 					writer.Write(floatS(vertex.z) + "), ");
+					count++;
 				}
 				
-				Vector3 lastVertex = VERTEX_LUT[faceIndices[faceIndices.Length - 1]];
+				Vector3 lastVertex = verts == true ? VERTEX_LUT[faceIndices[faceIndices.Length - 1]] : VERTEX_NORMALS[i];
 				writer.Write("new Vector3(");
 				writer.Write(floatS(lastVertex.x) + ",");
 				writer.Write(floatS(lastVertex.y) + ",");
 				
-				if (voxelValue != 63) {
+				if (voxelValue < 64) {
 					writer.Write(floatS(lastVertex.z) + "),");
 				}
+				
+				count++;
+				
+				writer.Write("\n");
 			}
 			else {
-				writer.Write("// NO RENDERABLE FACE");
+				if (includeComments) {
+					writer.Write("// NO RENDERABLE FACE\n");
+				}
 			}
-			
-			writer.Write("\n");
 		}
 		
-		return 0;
+		return count;
 	}
 	
 	static string floatS(float val) {
-		return "0" + val.ToString("#.00") + "f";
+		if (val.IsEqual(0.0f)) {
+			return "0.0f";
+		}
+		
+		if (val < 0.30f && val > 0.0f) {
+			return "0" + val.ToString("#.00") + "f";
+		}
+		
+		return val.ToString("#.0") + "f";
 	}
 }
