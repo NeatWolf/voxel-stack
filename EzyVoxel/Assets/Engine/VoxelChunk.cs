@@ -3,54 +3,6 @@ using System.Collections;
 using BitStack;
 
 namespace VoxelStack {
-	
-	/**
-	 * Represents a simple structure which encodes data
-	 * about a single voxel value. Each voxel has a single value
-	 * however contains multiple subvoxels up to 64 values.
-	 *
-	 * The state of the subvoxels is represented as an unsigned long (64 bits)
-	 */
-	public struct Voxel {
-		private readonly ushort type;
-		private readonly ulong state;
-		
-		public Voxel(ushort type, ulong state) {
-			this.type = type;
-			this.state = state;
-		}
-		
-		public ushort Type { 
-			get { 
-				return type; 
-			}
-		}
-		
-		public ulong State { 
-			get { 
-				return state; 
-			}
-		}
-		
-		public int this[int index] {
-			get {
-				return state.BitAt(index);
-			}
-		}
-		
-		public int StateCount {
-			get {
-				return state.PopCount();
-			}
-		}
-		
-		public int IsEnabled {
-			get {
-				return state > 0 ? 1 : 0;
-			}
-		}
-	}
-	
 	/**
 	 * Each Voxel Chunk has the following characteristics
 	 * - Each Chunk contains
@@ -63,47 +15,112 @@ namespace VoxelStack {
 	 * - - 64 x 8 bits for the Voxel Neighbour States
 	 */
 	public sealed class VoxelChunk {
-		public const uint VOXEL_TYPE_BYTES = 16 / 8;
-		public const uint VOXEL_STATES_BYTES = 64 / 8;
-		public const uint VOXEL_NEIGHBOUR_BYTES = 64;
+		public const uint SUBVOXELS_PER_VOXEL = 64;
+		public const uint STATES_TOTAL_LEN = SUBVOXELS_PER_VOXEL * CHUNK_VOXELS;
 		
 		public const uint CHUNK_SIZE = 4;
 		public const uint CHUNK_VOXELS = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-		
-		public const uint CHUNK_SHIFT = VOXEL_TYPE_BYTES * CHUNK_VOXELS;
-		
-		private byte[] state;
-		private ulong[] voxelSubstates;
-		
+
+		// the states which are used to figure out which 
+		// neighbour data to render/draw
+		readonly byte[] state;
+
+		// the voxel type, which is a 16 bit unsigned short
+		readonly ushort[] types;
+
+		// the state of the substates
+		readonly ulong[] substates;
+
 		public VoxelChunk() {
-			this.state = new byte[CHUNK_VOXELS + (VOXEL_TYPE_BYTES * CHUNK_VOXELS)];
-			this.voxelSubstates = new ulong[CHUNK_VOXELS];
+			state = new byte[STATES_TOTAL_LEN];
+			types = new ushort[CHUNK_VOXELS];
+			substates = new ulong[CHUNK_VOXELS];
 		}
 		
+		/**
+		 * This functionality will modify internal states for the
+		 * set() operation. The modification is a requirement for proper
+		 * rendering.
+		 * Access via local x,y,z coordinates
+		 */
 		public Voxel this[uint x, uint y, uint z] {
 			get {
-				uint key = BitMath.EncodeMortonKey(x, y, z) + (VOXEL_TYPE_BYTES - 1);
+				MortonKey3 key = new MortonKey3(x, y, z);
+				uint lutKey = key.Key;
 				
-				return new Voxel(new ValueTuple<byte, byte>(state[key - 1], state[key]).CombineToUShort(), voxelSubstates[key]);
+				return new Voxel(types[lutKey], substates[lutKey]);
 			}
 			set {
-				uint key = BitMath.EncodeMortonKey(x, y, z) + (VOXEL_TYPE_BYTES - 1);
+				MortonKey3 key = new MortonKey3(x, y, z);
+			
+				uint lutKey = key.Key;
 				
-				var splitValues = value.Type.SplitIntoByte();
+				ulong substate = substates[lutKey];
+				ulong newstate = value.State;
 				
-				state[key - 1] = splitValues.Item1;
-				state[key] = splitValues.Item2;
+				ulong differences = substate ^ newstate;
 				
-				voxelSubstates[key] = value.State;
+				// we need to re-generate our structure if and only if
+				// the provided bits for the cell has changed
+				if (differences != 0) {
 				
-				uint mortonKeyFront = BitMath.EncodeMortonKey(x, y, z - 1);
-				uint mortonKeyBack = BitMath.EncodeMortonKey(x, y, z + 1);
-				uint mortonKeyLeft = BitMath.EncodeMortonKey(x - 1, y, z);
-				uint mortonKeyRight = BitMath.EncodeMortonKey(x + 1, y, z);
-				uint mortonKeyUp = BitMath.EncodeMortonKey(x, y + 1, z);
-				uint mortonKeyDown = BitMath.EncodeMortonKey(x, y - 1, z);
+					// we will only be re-generating the bits which have
+					// been changed by the user. This change will be reflected
+					// in the final rendering
+					MortonKey3 offsetKey = new MortonKey3(x * 4, y * 4, z * 4);
+					
+					for (int i = 0; i < 64; i++) {
+						// execute only for the bits that have changed
+						if (differences.BitAt(i) == 1) {
+							// this could be ON (inserted) or OFF (removed)
+							byte ministate = (byte)newstate.BitAt(i);
+							
+							MortonKey3 cellLocalKey = new MortonKey3(i);
+							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
+							
+							// our morton keys for the neighbouring cells
+							MortonKey3 front = new MortonKey3(cellOffsetKey.Key);
+							MortonKey3 back = new MortonKey3(cellOffsetKey.Key);
+							MortonKey3 left = new MortonKey3(cellOffsetKey.Key);
+							MortonKey3 right = new MortonKey3(cellOffsetKey.Key);
+							MortonKey3 up = new MortonKey3(cellOffsetKey.Key);
+							MortonKey3 down = new MortonKey3(cellOffsetKey.Key);
+							
+							front.IncZ();
+							back.DecZ();
+							left.DecX();
+							right.IncX();
+							up.IncY();
+							down.DecY();
+							
+							byte frontv = state[front.Key];
+							byte backv = state[back.Key];
+							byte leftv = state[left.Key];
+							byte rightv = state[right.Key];
+							byte upv = state[up.Key];
+							byte downv = state[down.Key];
+							
+							// set all neighbouring states for all subvoxel types
+							state[front.Key] = frontv.SetBit(1, ministate);
+							state[back.Key] = backv.SetBit(0, ministate);
+							state[left.Key] = leftv.SetBit(3, ministate);
+							state[right.Key] = rightv.SetBit(2, ministate);
+							state[up.Key] = upv.SetBit(5, ministate);
+							state[down.Key] = downv.SetBit(4, ministate);
+						}
+					}
+				}
 				
-				
+				// set out type and substate types for the 
+				// provided index
+				types[lutKey] = value.Type;
+				substates[lutKey] = newstate;
+			}
+		}
+		
+		public NeighbourState this[MortonKey3 key] {
+			get {
+				return new NeighbourState(null, 0);
 			}
 		}
 	}
