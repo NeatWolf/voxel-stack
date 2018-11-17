@@ -215,7 +215,7 @@ public class VoxelLUTGenerator : EditorWindow {
 				writer.Write("// LUT Bit Index='" + i + "' Face='" + lutNames[i] + "' State='" + (lutIndex[i] == 0 ? "ON" : "OFF") + "'\n");
 			}
 			
-			if (lutIndex[i] == 0) {
+			if (lutIndex[i] == 1) {
 				writer.Write("\t\t\t");
 				
 				if (includeComments) {

@@ -3,6 +3,10 @@ using System.Collections;
 using BitStack;
 using VoxelStackLUT;
 
+#if UNITY_EDITOR || DEBUG
+	using VoxelStackDebug;
+#endif
+
 namespace VoxelStack {
 	/**
 	 * Each Voxel Chunk has the following characteristics
@@ -155,11 +159,11 @@ namespace VoxelStack {
 		 * or debug mode. Use the compute shaders for rendering voxels
 		 * properly.
 		 */
-		public void FillMesh(Mesh mesh) {
-			#if UNITY_EDITOR || DEBUG
+		#if UNITY_EDITOR || DEBUG
+			public void FillMesh(Mesh mesh) {
 				Vector3[] newVertices = new Vector3[VertexCount];
 				Vector3[] newNormals = new Vector3[VertexCount];
-				int[] indices = new int[VertexCount];
+				int[] indices = new int[(VertexCount / 4) * 6];
 				
 				int from = 0;
 				
@@ -183,20 +187,25 @@ namespace VoxelStack {
 										from);
 				}
 				
+				int len = indices.Length;
+				
 				// fill our indices
-				for (int i = 0; i < VertexCount; i++) {
-					indices[i] = i;
+				for (int i = 0, j = 0; i < len; i+=6, j+=4) {
+					indices[i+0] = j;
+					indices[i+1] = j+1;
+					indices[i+2] = j+2;
+					indices[i+3] = j+1;
+					indices[i+4] = j+2;
+					indices[i+5] = j+3;
 				}
 				
 				mesh.MarkDynamic();
-				mesh.Clear(false);
+				mesh.Clear();
 				mesh.vertices = newVertices;
 				mesh.normals = newNormals;
 				mesh.triangles = indices;
-			#else
-				BitDebug.Exception("Voxel.FillMesh(Mesh) - functionality is only available in editor or debug mode. This should not be called in production!");
-			#endif
-		}
+			}
+		#endif
 		
 		/**
 		 * Every time this chunk is updated, the dirty flag is set

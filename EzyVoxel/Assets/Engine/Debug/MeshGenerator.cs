@@ -2,8 +2,8 @@
 using VoxelStackLUT;
 using BitStack;
 
-namespace VoxelStack {
 #if UNITY_EDITOR || DEBUG
+namespace VoxelStackDebug {
 	/**
 	 * This functionality is used for debugging purposes to ensure
 	 * rendering is performed properly. 
@@ -45,5 +45,5 @@ namespace VoxelStack {
 			return from;
 		}
 	}
-#endif
 }
+#endif
