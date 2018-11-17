@@ -1,10 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using VoxelStackLUT;
 using BitStack;
 
 namespace VoxelStack {
+#if UNITY_EDITOR || DEBUG
+	/**
+	 * This functionality is used for debugging purposes to ensure
+	 * rendering is performed properly. 
+	 * Proper rendering via Compute Shaders should be used for the most optimum
+	 * performance.
+	 */
 	public class MeshGenerator {
 		
 		public static int FillVertices(byte voxel, MortonKey3 mortonKey, float positionScale, ref Vector3[] array, int from) {
@@ -40,4 +45,5 @@ namespace VoxelStack {
 			return from;
 		}
 	}
+#endif
 }
