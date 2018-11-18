@@ -25,7 +25,8 @@ namespace VoxelStackDebug {
 			decodedKey.z *= positionScale;
 			
 			for (int i = indexFrom; i < indexTo; i++) {
-				array[from++] = vertexLutTable[i] + decodedKey;
+				Debug.Log("Voxel = " + voxel + " Data = " + vertexLutTable[i]);
+				array[from++] = vertexLutTable[i]/* + decodedKey*/;
 			}
 			
 			return from;

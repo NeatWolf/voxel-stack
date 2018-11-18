@@ -12,6 +12,9 @@ namespace VoxelStack {
 	 * Total memory footprit of this structure is 80 bits or 10 bytes
 	 */
 	public struct Voxel : IEquatable<Voxel>{
+		public const ulong STATE_MAX = ulong.MaxValue;
+		public const ulong STATE_ZERO = 0;
+	
 		readonly ushort type;
 		readonly ulong state;
 		

@@ -82,24 +82,63 @@ namespace VoxelStack {
 						if (differences.BitAt(i) == 1) {
 							// this could be ON (inserted) or OFF (removed)
 							byte ministate = (byte)newstate.BitAt(i);
+							byte ministate_inv = (byte)(1 - ministate);
 							
 							MortonKey3 cellLocalKey = new MortonKey3(i);
 							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
 							
 							// our morton keys for the neighbouring cells
-							NeighbourState front = this[cellOffsetKey.IncZ()];
-							NeighbourState back = this[cellOffsetKey.DecZ()];
-							NeighbourState right = this[cellOffsetKey.IncX()];
-							NeighbourState left = this[cellOffsetKey.DecX()];
-							NeighbourState up = this[cellOffsetKey.IncY()];
-							NeighbourState down = this[cellOffsetKey.DecY()];
+							NeighbourState current = this[cellLocalKey];
+							byte currentValue = current.Value;
 							
-							front.Value = front.Value.SetBit(1, ministate);
-							back.Value = back.Value.SetBit(0, ministate);
-							left.Value = left.Value.SetBit(3, ministate);
-							right.Value = right.Value.SetBit(2, ministate);
-							up.Value = up.Value.SetBit(5, ministate);
-							down.Value = down.Value.SetBit(4, ministate);
+							// ensure this cell is occupied/freed depending on
+							// the state which was written
+							currentValue = currentValue.SetBit(7, ministate);
+							
+							// FRONT
+							NeighbourState front = this[cellOffsetKey.DecZ()];
+							byte frontValue = front.Value;
+							frontValue = frontValue.SetBit(1, ministate_inv);
+							currentValue = currentValue.SetBit(1, (byte)frontValue.BitInvAt(7));
+							front.Value = frontValue;
+							
+							// BACK
+							NeighbourState back = this[cellOffsetKey.IncZ()];
+							byte backValue = back.Value;
+							backValue = backValue.SetBit(0, ministate_inv);
+							currentValue = currentValue.SetBit(0, (byte)backValue.BitInvAt(7));
+							back.Value = backValue;
+							
+							// LEFT
+							NeighbourState left = this[cellOffsetKey.DecX()];
+							byte leftValue = left.Value;
+							leftValue = leftValue.SetBit(3, ministate_inv);
+							currentValue = currentValue.SetBit(3, (byte)leftValue.BitInvAt(7));
+							left.Value = leftValue;
+							
+							// RIGHT
+							NeighbourState right = this[cellOffsetKey.IncX()];
+							byte rightValue = right.Value;
+							rightValue = rightValue.SetBit(2, ministate_inv);
+							currentValue = currentValue.SetBit(2, (byte)rightValue.BitInvAt(7));
+							right.Value = rightValue;
+							
+							// UP
+							NeighbourState up = this[cellOffsetKey.IncY()];
+							byte upValue = up.Value;
+							upValue = upValue.SetBit(5, ministate_inv);
+							currentValue = currentValue.SetBit(5, (byte)upValue.BitInvAt(7));
+							up.Value = upValue;
+							
+							// DOWN
+							NeighbourState down = this[cellOffsetKey.DecY()];
+							byte downValue = down.Value;
+							downValue = downValue.SetBit(4, ministate_inv);
+							currentValue = currentValue.SetBit(4, (byte)downValue.BitInvAt(7));
+							down.Value = downValue;
+							
+							// write our current value
+							current.Value = currentValue;
 						}
 					}
 				}
@@ -143,7 +182,7 @@ namespace VoxelStack {
 				int count = 0;
 				
 				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
-					byte voxel = state[i];
+					byte voxel = (byte)(state[i] & 0x3F);
 					
 					count += indices[voxel + 1] - indices[voxel];
 				}
@@ -170,7 +209,7 @@ namespace VoxelStack {
 				// fill our vertices
 				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
 					from = MeshGenerator.FillVertices(
-										state[i], 
+										(byte)(state[i] & 0x3F), 
 										new MortonKey3(i), 
 										0.25f, 
 										ref newVertices, 
@@ -182,7 +221,7 @@ namespace VoxelStack {
 				// fill our normals
 				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
 					from = MeshGenerator.FillNormals(
-										state[i],
+										(byte)(state[i] & 0x3F),
 										ref newVertices, 
 										from);
 				}
@@ -194,7 +233,7 @@ namespace VoxelStack {
 					indices[i+0] = j;
 					indices[i+1] = j+1;
 					indices[i+2] = j+2;
-					indices[i+3] = j+1;
+					indices[i+3] = j;
 					indices[i+4] = j+2;
 					indices[i+5] = j+3;
 				}

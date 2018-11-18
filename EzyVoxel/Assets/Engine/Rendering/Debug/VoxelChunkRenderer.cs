@@ -65,8 +65,6 @@ namespace VoxelStackDebug {
 			
 			int[] triangles = sharedMesh.triangles;
 			
-			Debug.Log("READ - " + triangles.Length);
-			
 			Gizmos.color = Color.green;
 			
 			for (int i = 0; i < triangles.Length; i+=3) {

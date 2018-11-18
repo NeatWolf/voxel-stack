@@ -10,15 +10,31 @@ public class VoxelLUTGenerator : EditorWindow {
 	 * in size of 0.25 x 0.25 x 0.25. With this system, each
 	 * voxel will have 64 sub-voxels. One voxel will be 1 x 1 x 1
 	 */
+	private static Vector3[] VERTEX_LUT_N = {
+		new Vector3(0,1,0),
+		new Vector3(1,1,0),
+		new Vector3(1,0,0),
+		new Vector3(0,0,0),
+		new Vector3(0,1,1),
+		new Vector3(1,1,1),
+		new Vector3(1,0,1),
+		new Vector3(0,0,1)
+	};
+	
+	/**
+	 * All the required vertices to make a voxel/cube
+	 * in size of 0.25 x 0.25 x 0.25. With this system, each
+	 * voxel will have 64 sub-voxels. One voxel will be 1 x 1 x 1
+	 */
 	private static Vector3[] VERTEX_LUT = {
-		new Vector3(0.0f, 0.25f, 0.0f),
-		new Vector3(0.25f, 0.25f, 0.0f),
-		new Vector3(0.25f, 0.0f, 0.0f),
-		new Vector3(0.0f, 0.0f, 0.0f),
-		new Vector3(0.0f, 0.0f, 0.25f),
-		new Vector3(0.25f, 0.0f, 0.25f),
-		new Vector3(0.25f, 0.25f, 0.25f),
-		new Vector3(0.0f, 0.25f, 0.0f)
+		new Vector3(VERTEX_LUT_N[0].x / 4.0f, VERTEX_LUT_N[0].y / 4.0f, VERTEX_LUT_N[0].z / 4.0f),
+		new Vector3(VERTEX_LUT_N[1].x / 4.0f, VERTEX_LUT_N[1].y / 4.0f, VERTEX_LUT_N[1].z / 4.0f),
+		new Vector3(VERTEX_LUT_N[2].x / 4.0f, VERTEX_LUT_N[2].y / 4.0f, VERTEX_LUT_N[2].z / 4.0f),
+		new Vector3(VERTEX_LUT_N[3].x / 4.0f, VERTEX_LUT_N[3].y / 4.0f, VERTEX_LUT_N[3].z / 4.0f),
+		new Vector3(VERTEX_LUT_N[4].x / 4.0f, VERTEX_LUT_N[4].y / 4.0f, VERTEX_LUT_N[4].z / 4.0f),
+		new Vector3(VERTEX_LUT_N[5].x / 4.0f, VERTEX_LUT_N[5].y / 4.0f, VERTEX_LUT_N[5].z / 4.0f),
+		new Vector3(VERTEX_LUT_N[6].x / 4.0f, VERTEX_LUT_N[6].y / 4.0f, VERTEX_LUT_N[6].z / 4.0f),
+		new Vector3(VERTEX_LUT_N[7].x / 4.0f, VERTEX_LUT_N[7].y / 4.0f, VERTEX_LUT_N[7].z / 4.0f)
 	};
 	
 	/**
@@ -33,13 +49,13 @@ public class VoxelLUTGenerator : EditorWindow {
 		// back
 		new int[]{4, 5, 6, 7},
 		// left
-		new int[]{1, 2, 5, 6},
+		new int[]{0, 4, 7, 3},
 		// right
-		new int[]{0, 3, 4, 7},
+		new int[]{1, 5, 6, 2},
 		// up
-		new int[]{0, 1, 6, 7},
+		new int[]{0, 4, 5, 1},
 		// down
-		new int[]{2, 3, 4, 5}
+		new int[]{3, 7, 6, 2}
 	};
 	
 	/**
@@ -212,7 +228,7 @@ public class VoxelLUTGenerator : EditorWindow {
 		for (int i = 0; i < lutIndex.Length; i++) {
 			if (includeComments) {
 				writer.Write("\t\t\t\t");
-				writer.Write("// LUT Bit Index='" + i + "' Face='" + lutNames[i] + "' State='" + (lutIndex[i] == 0 ? "ON" : "OFF") + "'\n");
+				writer.Write("// LUT Bit Index='" + i + "' Face='" + lutNames[i] + "' State='" + (lutIndex[i] == 0 ? "OFF" : "ON") + "'\n");
 			}
 			
 			if (lutIndex[i] == 1) {
