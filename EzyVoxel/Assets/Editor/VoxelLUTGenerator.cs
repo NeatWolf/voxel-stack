@@ -5,6 +5,8 @@ using System.IO;
 
 public class VoxelLUTGenerator : EditorWindow {
 
+	public const float SUBVOXEL_SIZE = 0.25f;
+
 	/**
 	 * All the required vertices to make a voxel/cube
 	 * in size of 0.25 x 0.25 x 0.25. With this system, each
@@ -27,14 +29,14 @@ public class VoxelLUTGenerator : EditorWindow {
 	 * voxel will have 64 sub-voxels. One voxel will be 1 x 1 x 1
 	 */
 	private static Vector3[] VERTEX_LUT = {
-		new Vector3(VERTEX_LUT_N[0].x / 4.0f, VERTEX_LUT_N[0].y / 4.0f, VERTEX_LUT_N[0].z / 4.0f),
-		new Vector3(VERTEX_LUT_N[1].x / 4.0f, VERTEX_LUT_N[1].y / 4.0f, VERTEX_LUT_N[1].z / 4.0f),
-		new Vector3(VERTEX_LUT_N[2].x / 4.0f, VERTEX_LUT_N[2].y / 4.0f, VERTEX_LUT_N[2].z / 4.0f),
-		new Vector3(VERTEX_LUT_N[3].x / 4.0f, VERTEX_LUT_N[3].y / 4.0f, VERTEX_LUT_N[3].z / 4.0f),
-		new Vector3(VERTEX_LUT_N[4].x / 4.0f, VERTEX_LUT_N[4].y / 4.0f, VERTEX_LUT_N[4].z / 4.0f),
-		new Vector3(VERTEX_LUT_N[5].x / 4.0f, VERTEX_LUT_N[5].y / 4.0f, VERTEX_LUT_N[5].z / 4.0f),
-		new Vector3(VERTEX_LUT_N[6].x / 4.0f, VERTEX_LUT_N[6].y / 4.0f, VERTEX_LUT_N[6].z / 4.0f),
-		new Vector3(VERTEX_LUT_N[7].x / 4.0f, VERTEX_LUT_N[7].y / 4.0f, VERTEX_LUT_N[7].z / 4.0f)
+		new Vector3(VERTEX_LUT_N[0].x * SUBVOXEL_SIZE, VERTEX_LUT_N[0].y * SUBVOXEL_SIZE, VERTEX_LUT_N[0].z * SUBVOXEL_SIZE),
+		new Vector3(VERTEX_LUT_N[1].x * SUBVOXEL_SIZE, VERTEX_LUT_N[1].y * SUBVOXEL_SIZE, VERTEX_LUT_N[1].z * SUBVOXEL_SIZE),
+		new Vector3(VERTEX_LUT_N[2].x * SUBVOXEL_SIZE, VERTEX_LUT_N[2].y * SUBVOXEL_SIZE, VERTEX_LUT_N[2].z * SUBVOXEL_SIZE),
+		new Vector3(VERTEX_LUT_N[3].x * SUBVOXEL_SIZE, VERTEX_LUT_N[3].y * SUBVOXEL_SIZE, VERTEX_LUT_N[3].z * SUBVOXEL_SIZE),
+		new Vector3(VERTEX_LUT_N[4].x * SUBVOXEL_SIZE, VERTEX_LUT_N[4].y * SUBVOXEL_SIZE, VERTEX_LUT_N[4].z * SUBVOXEL_SIZE),
+		new Vector3(VERTEX_LUT_N[5].x * SUBVOXEL_SIZE, VERTEX_LUT_N[5].y * SUBVOXEL_SIZE, VERTEX_LUT_N[5].z * SUBVOXEL_SIZE),
+		new Vector3(VERTEX_LUT_N[6].x * SUBVOXEL_SIZE, VERTEX_LUT_N[6].y * SUBVOXEL_SIZE, VERTEX_LUT_N[6].z * SUBVOXEL_SIZE),
+		new Vector3(VERTEX_LUT_N[7].x * SUBVOXEL_SIZE, VERTEX_LUT_N[7].y * SUBVOXEL_SIZE, VERTEX_LUT_N[7].z * SUBVOXEL_SIZE)
 	};
 	
 	/**
@@ -47,15 +49,15 @@ public class VoxelLUTGenerator : EditorWindow {
 		// front
 		new int[]{0, 1, 2, 3},
 		// back
-		new int[]{4, 5, 6, 7},
+		new int[]{7, 6, 5, 4},
 		// left
-		new int[]{0, 4, 7, 3},
+		new int[]{3, 7, 4, 0},
 		// right
 		new int[]{1, 5, 6, 2},
 		// up
 		new int[]{0, 4, 5, 1},
 		// down
-		new int[]{3, 7, 6, 2}
+		new int[]{2, 6, 7, 3}
 	};
 	
 	/**

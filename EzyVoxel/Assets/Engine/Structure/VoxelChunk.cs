@@ -222,7 +222,7 @@ namespace VoxelStack {
 				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
 					from = MeshGenerator.FillNormals(
 										(byte)(state[i] & 0x3F),
-										ref newVertices, 
+										ref newNormals, 
 										from);
 				}
 				
@@ -238,11 +238,10 @@ namespace VoxelStack {
 					indices[i+5] = j+3;
 				}
 				
-				mesh.MarkDynamic();
-				mesh.Clear();
 				mesh.vertices = newVertices;
 				mesh.normals = newNormals;
 				mesh.triangles = indices;
+				mesh.MarkDynamic();
 			}
 		#endif
 		
