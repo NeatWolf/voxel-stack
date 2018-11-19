@@ -88,7 +88,7 @@ namespace VoxelStack {
 							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
 							
 							// our morton keys for the neighbouring cells
-							NeighbourState current = this[cellLocalKey];
+							NeighbourState current = this[cellOffsetKey];
 							byte currentValue = current.Value;
 							
 							// ensure this cell is occupied/freed depending on
@@ -99,42 +99,42 @@ namespace VoxelStack {
 							NeighbourState front = this[cellOffsetKey.DecZ()];
 							byte frontValue = front.Value;
 							frontValue = frontValue.SetBit(1, ministate_inv);
-							currentValue = currentValue.SetBit(1, (byte)frontValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(0, (byte)frontValue.BitInvAt(7));
 							front.Value = frontValue;
 							
 							// BACK
 							NeighbourState back = this[cellOffsetKey.IncZ()];
 							byte backValue = back.Value;
 							backValue = backValue.SetBit(0, ministate_inv);
-							currentValue = currentValue.SetBit(0, (byte)backValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(1, (byte)backValue.BitInvAt(7));
 							back.Value = backValue;
 							
 							// LEFT
 							NeighbourState left = this[cellOffsetKey.DecX()];
 							byte leftValue = left.Value;
 							leftValue = leftValue.SetBit(3, ministate_inv);
-							currentValue = currentValue.SetBit(3, (byte)leftValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(2, (byte)leftValue.BitInvAt(7));
 							left.Value = leftValue;
 							
 							// RIGHT
 							NeighbourState right = this[cellOffsetKey.IncX()];
 							byte rightValue = right.Value;
 							rightValue = rightValue.SetBit(2, ministate_inv);
-							currentValue = currentValue.SetBit(2, (byte)rightValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(3, (byte)rightValue.BitInvAt(7));
 							right.Value = rightValue;
 							
 							// UP
 							NeighbourState up = this[cellOffsetKey.IncY()];
 							byte upValue = up.Value;
 							upValue = upValue.SetBit(5, ministate_inv);
-							currentValue = currentValue.SetBit(5, (byte)upValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(4, (byte)upValue.BitInvAt(7));
 							up.Value = upValue;
 							
 							// DOWN
 							NeighbourState down = this[cellOffsetKey.DecY()];
 							byte downValue = down.Value;
 							downValue = downValue.SetBit(4, ministate_inv);
-							currentValue = currentValue.SetBit(4, (byte)downValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(5, (byte)downValue.BitInvAt(7));
 							down.Value = downValue;
 							
 							// write our current value
