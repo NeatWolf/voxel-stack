@@ -64,14 +64,19 @@ namespace VoxelStack {
 				uint lutKey = key.Key;
 				
 				ulong substate = substates[lutKey];
-				ulong newstate = value.State;
+				ulong newstate = value.State.Value;
 				
 				ulong differences = substate ^ newstate;
 				
+				types[lutKey] = value.Type;
+				substates[lutKey] = newstate;
+				
 				// we need to re-generate our structure if and only if
 				// the provided bits for the cell has changed
+				// for efficiency, if only a single cell has changed, then we
+				// update only that cell, saving on precious performance.
 				if (differences != 0) {
-				
+					
 					// we will only be re-generating the bits which have
 					// been changed by the user. This change will be reflected
 					// in the final rendering
@@ -80,9 +85,10 @@ namespace VoxelStack {
 					for (int i = 0; i < 64; i++) {
 						// execute only for the bits that have changed
 						if (differences.BitAt(i) == 1) {
+							
 							// this could be ON (inserted) or OFF (removed)
 							byte ministate = (byte)newstate.BitAt(i);
-							byte ministate_inv = (byte)(1 - ministate);
+							byte ministate_inv = (byte)(newstate.BitInvAt(i));
 							
 							MortonKey3 cellLocalKey = new MortonKey3(i);
 							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
@@ -93,44 +99,44 @@ namespace VoxelStack {
 							
 							// ensure this cell is occupied/freed depending on
 							// the state which was written
-							currentValue = currentValue.SetBit(7, ministate);
+							// currentValue = currentValue.SetBit(7, ministate);
 							
-							// FRONT
+							// FRONT - Neighbour state can be from another cell group
 							NeighbourState front = this[cellOffsetKey.DecZ()];
 							byte frontValue = front.Value;
 							frontValue = frontValue.SetBit(1, ministate_inv);
 							currentValue = currentValue.SetBit(0, (byte)frontValue.BitInvAt(7));
 							front.Value = frontValue;
 							
-							// BACK
+							// BACK - Neighbour state can be from another cell group
 							NeighbourState back = this[cellOffsetKey.IncZ()];
 							byte backValue = back.Value;
 							backValue = backValue.SetBit(0, ministate_inv);
 							currentValue = currentValue.SetBit(1, (byte)backValue.BitInvAt(7));
 							back.Value = backValue;
 							
-							// LEFT
+							// LEFT - Neighbour state can be from another cell group
 							NeighbourState left = this[cellOffsetKey.DecX()];
 							byte leftValue = left.Value;
 							leftValue = leftValue.SetBit(3, ministate_inv);
 							currentValue = currentValue.SetBit(2, (byte)leftValue.BitInvAt(7));
 							left.Value = leftValue;
 							
-							// RIGHT
+							// RIGHT- Neighbour state can be from another cell group
 							NeighbourState right = this[cellOffsetKey.IncX()];
 							byte rightValue = right.Value;
 							rightValue = rightValue.SetBit(2, ministate_inv);
 							currentValue = currentValue.SetBit(3, (byte)rightValue.BitInvAt(7));
 							right.Value = rightValue;
 							
-							// UP
+							// UP - Neighbour state can be from another cell group
 							NeighbourState up = this[cellOffsetKey.IncY()];
 							byte upValue = up.Value;
 							upValue = upValue.SetBit(5, ministate_inv);
 							currentValue = currentValue.SetBit(4, (byte)upValue.BitInvAt(7));
 							up.Value = upValue;
 							
-							// DOWN
+							// DOWN - Neighbour state can be from another cell group
 							NeighbourState down = this[cellOffsetKey.DecY()];
 							byte downValue = down.Value;
 							downValue = downValue.SetBit(4, ministate_inv);
@@ -141,15 +147,10 @@ namespace VoxelStack {
 							current.Value = currentValue;
 						}
 					}
+					
+					isDirty = true;
+					vertexNumber = -1;
 				}
-				
-				// set out type and substate types for the 
-				// provided index
-				types[lutKey] = value.Type;
-				substates[lutKey] = newstate;
-				
-				isDirty = true;
-				vertexNumber = -1;
 			}
 		}
 		
@@ -238,6 +239,7 @@ namespace VoxelStack {
 					indices[i+5] = j+3;
 				}
 				
+				mesh.Clear(false);
 				mesh.vertices = newVertices;
 				mesh.normals = newNormals;
 				mesh.triangles = indices;

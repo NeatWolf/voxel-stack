@@ -4,12 +4,30 @@ using VoxelStack;
 
 #if UNITY_EDITOR || DEBUG
 namespace VoxelStackDebug {
+	public enum ChunkStyle : ulong {
+		ZERO = 0,
+		BOX = SubVoxel.BOX,
+		BOX_HALF = SubVoxel.BOX_HALF,
+		BOX_HALLOW = SubVoxel.BOX_HALLOW,
+		BOX_ODD_FILLER = SubVoxel.BOX,
+		BOX_ODD_EDGE = SubVoxel.BOX_ODD_FILLER,
+		BOX_NO_CORNERS = SubVoxel.BOX_NO_CORNERS,
+		BOX_ONLY_CORNERS = SubVoxel.BOX_ONLY_CORNERS,
+		DIAGONAL = SubVoxel.DIAGONAL,
+		BOX_BOTTOM_HALF = SubVoxel.BOX_BOTTOM_HALF,
+		BOX_TOP_HALF = SubVoxel.BOX_TOP_HALF,
+		BOX_BOTTOM_QUARTER = SubVoxel.BOX_BOTTOM_QUARTER,
+		BOX_TOP_QUARTER = SubVoxel.BOX_TOP_QUARTER
+	}
+	
 	public class VoxelChunkRenderer : MonoBehaviour {
 	
 		public Material material;
 		public bool drawDebug = false;
 		
-		private VoxelChunk chunk;
+		VoxelChunk chunk;
+		
+		public ulong[] styles = new ulong[8];
 	
 		void Start() {
 			MeshRenderer rend = gameObject.GetComponent<MeshRenderer>();
@@ -29,18 +47,37 @@ namespace VoxelStackDebug {
 			if (filter.sharedMesh == null) {
 				filter.sharedMesh = new Mesh();
 			}
-			
-			RenderChunk(filter.sharedMesh);
 		}
-		
-		void RenderChunk(Mesh mesh) {
+
+		void Update() {
 			if (chunk == null) {
 				chunk = new VoxelChunk();
 			}
 			
-			chunk[2,2,2] = new Voxel(1, Voxel.STATE_MAX - 5);
+			//chunk[1,1,1] = new Voxel(1, SubVoxel.BOX_BOTTOM_HALF);
+			chunk[1,1,1] = new Voxel(1, SubVoxel.BOX);
+			chunk[1,1,1] = new Voxel(1, SubVoxel.BOX_BOTTOM_HALF);
+			/*
+			chunk[1,2,1] = new Voxel(1, styles[1]);
+			chunk[1,1,2] = new Voxel(1, styles[2]);
+			chunk[1,2,2] = new Voxel(1, styles[3]);
+			chunk[2,2,2] = new Voxel(1, styles[4]);
+			chunk[2,2,1] = new Voxel(1, styles[5]);
+			chunk[2,1,2] = new Voxel(1, styles[6]);
+			chunk[2,1,1] = new Voxel(1, styles[7]);
+			*/
+
+			MeshFilter filter = gameObject.GetComponent<MeshFilter>();
+
+			if (filter == null) {
+				filter = gameObject.AddComponent<MeshFilter>();
+			}
 			
-			chunk.FillMesh(mesh);
+			if (filter.sharedMesh == null) {
+				filter.sharedMesh = new Mesh();
+			}
+			
+			chunk.FillMesh(filter.sharedMesh);
 		}
 
 		void OnDrawGizmos() {

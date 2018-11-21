@@ -11,18 +11,28 @@ namespace VoxelStack {
 	 * The state of the voxel type is represented as an unsigned short (16 bits)
 	 * Total memory footprit of this structure is 80 bits or 10 bytes
 	 */
-	public struct Voxel : IEquatable<Voxel>{
-		public const ulong STATE_MAX = ulong.MaxValue;
-		public const ulong STATE_ZERO = 0;
-	
+#if !NET_4_6
+	public struct Voxel : IEquatable<Voxel> {
+#else 
+	public readonly struct Voxel : IEquatable<Voxel> {
+#endif
 		readonly ushort type;
-		readonly ulong state;
+		readonly SubVoxel state;
 		
 		public Voxel(ushort type, ulong state) {
+			this.type = type;
+			this.state = new SubVoxel(state);
+		}
+		
+		public Voxel(ushort type, SubVoxel state) {
 			this.type = type;
 			this.state = state;
 		}
 		
+		/**
+		 * Returns the type (value) of the current Voxel.
+		 * All SubVoxels share the same value.
+		 */
 		public ushort Type { 
 			get { 
 				return type; 
@@ -33,59 +43,9 @@ namespace VoxelStack {
 		 * The states of a voxel is encoded in Morton Z Order. Ensure to encode
 		 * any resulting state via morton keys.
 		 */
-		public ulong State { 
+		public SubVoxel State { 
 			get { 
 				return state; 
-			}
-		}
-		
-		/**
-		 * Access a single state from a possible of 64 states of the voxel. The
-		 * states are encoded in morton z order and are not linear.
-		 */
-		public int this[int index] {
-			get {
-				#if UNITY_EDITOR || DEBUG
-					if (index < 0 || index > 63) {
-						BitDebug.Exception("Voxel[index] - index must be between 0 and 64 because Voxels only have 64 maximum states, was " + index);
-					}
-				#endif
-				
-				return state.BitAt(index);
-			}
-		}
-		
-		/**
-		 * Access a single state from a possible of 64 states of a voxel. Each
-		 * component makes up 4 units, 4 x 4 x 4 = 64 states. This method
-		 * will encode the access into a morton z order.
-		 */
-		public int this[uint x, uint y, uint z] {
-			get {
-				#if UNITY_EDITOR || DEBUG
-					if (x > 4 || x < 0) {
-						BitDebug.Exception("Voxel(uint, uint, uint) - array key x component must be between 0-3, was " + x);
-					}
-					
-					if (y > 4 || y < 0) {
-						BitDebug.Exception("Voxel(uint, uint, uint) - array key y component must be between 0-3, was " + y);
-					}
-					
-					if (z > 4 || z < 0) {
-						BitDebug.Exception("Voxel(uint, uint, uint) - array key z component must be between 0-3, was " + z);
-					}
-				#endif
-				return this[(int)BitMath.EncodeMortonKey(x, y, z)];
-			}
-		}
-		
-		/**
-		 * the number of states which are enabled and are in the ON state.
-		 * Uses PopCount() functionality for efficiency.
-		 */
-		public int StateCount {
-			get {
-				return state.PopCount();
 			}
 		}
 
@@ -95,7 +55,7 @@ namespace VoxelStack {
 		 * rendering chunks.
 		 */
 		public bool Equals(Voxel other) {
-			return other.type == type && other.state == state;
+			return other.type == type && other.state.Equals(state);
 		}
 	}
 }
