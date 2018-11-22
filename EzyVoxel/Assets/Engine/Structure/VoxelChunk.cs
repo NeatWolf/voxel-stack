@@ -25,6 +25,8 @@ namespace VoxelStack {
 		
 		public const uint CHUNK_SIZE = 4;
 		public const uint CHUNK_VOXELS = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+		
+		public const int STATE_MASK = 0x3F;
 
 		// the states which are used to figure out which 
 		// neighbour data to render/draw
@@ -66,7 +68,7 @@ namespace VoxelStack {
 				ulong substate = substates[lutKey];
 				ulong newstate = value.State.Value;
 				
-				ulong differences = substate ^ newstate;
+				ulong differences = newstate ^ substate;
 				
 				types[lutKey] = value.Type;
 				substates[lutKey] = newstate;
@@ -82,65 +84,82 @@ namespace VoxelStack {
 					// in the final rendering
 					MortonKey3 offsetKey = new MortonKey3(x * 4, y * 4, z * 4);
 					
+					// first pass, we set the switch for our subvoxels so the next
+					// pass is working with the correct data.
+					// since we are working with values only on this cell, it means that
+					// this operation has zero branching operations.
 					for (int i = 0; i < 64; i++) {
 						// execute only for the bits that have changed
 						if (differences.BitAt(i) == 1) {
-							
-							// this could be ON (inserted) or OFF (removed)
-							byte ministate = (byte)newstate.BitAt(i);
-							byte ministate_inv = (byte)(newstate.BitInvAt(i));
-							
 							MortonKey3 cellLocalKey = new MortonKey3(i);
+							
+							byte ministate = (byte)newstate.BitAt(i);
+							
+							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
+							
+							uint mKey = cellOffsetKey.Key;
+							byte cellValue = state[mKey];
+							
+							// set the state of the cell, if it was enabled or disabled
+							state[mKey] = cellValue.SetBit(6, ministate);
+						}
+					}
+					
+					// second pass, we modify the LUT values so everything renders
+					// correctly.
+					for (int i = 0; i < 64; i++) {
+						// execute only for the bits that have changed
+						if (differences.BitAt(i) == 1) {
+							MortonKey3 cellLocalKey = new MortonKey3(i);
+							// this could be ON (inserted) or OFF (removed)
+							byte ministate_inv = (byte)newstate.BitInvAt(i);
+							
 							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
 							
 							// our morton keys for the neighbouring cells
 							NeighbourState current = this[cellOffsetKey];
 							byte currentValue = current.Value;
 							
-							// ensure this cell is occupied/freed depending on
-							// the state which was written
-							// currentValue = currentValue.SetBit(7, ministate);
-							
 							// FRONT - Neighbour state can be from another cell group
 							NeighbourState front = this[cellOffsetKey.DecZ()];
 							byte frontValue = front.Value;
 							frontValue = frontValue.SetBit(1, ministate_inv);
-							currentValue = currentValue.SetBit(0, (byte)frontValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(0, (byte)frontValue.BitInvAt(6));
 							front.Value = frontValue;
 							
 							// BACK - Neighbour state can be from another cell group
 							NeighbourState back = this[cellOffsetKey.IncZ()];
 							byte backValue = back.Value;
 							backValue = backValue.SetBit(0, ministate_inv);
-							currentValue = currentValue.SetBit(1, (byte)backValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(1, (byte)backValue.BitInvAt(6));
 							back.Value = backValue;
 							
 							// LEFT - Neighbour state can be from another cell group
 							NeighbourState left = this[cellOffsetKey.DecX()];
 							byte leftValue = left.Value;
 							leftValue = leftValue.SetBit(3, ministate_inv);
-							currentValue = currentValue.SetBit(2, (byte)leftValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(2, (byte)leftValue.BitInvAt(6));
 							left.Value = leftValue;
 							
 							// RIGHT- Neighbour state can be from another cell group
 							NeighbourState right = this[cellOffsetKey.IncX()];
 							byte rightValue = right.Value;
 							rightValue = rightValue.SetBit(2, ministate_inv);
-							currentValue = currentValue.SetBit(3, (byte)rightValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(3, (byte)rightValue.BitInvAt(6));
 							right.Value = rightValue;
 							
 							// UP - Neighbour state can be from another cell group
 							NeighbourState up = this[cellOffsetKey.IncY()];
 							byte upValue = up.Value;
 							upValue = upValue.SetBit(5, ministate_inv);
-							currentValue = currentValue.SetBit(4, (byte)upValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(4, (byte)upValue.BitInvAt(6));
 							up.Value = upValue;
 							
 							// DOWN - Neighbour state can be from another cell group
 							NeighbourState down = this[cellOffsetKey.DecY()];
 							byte downValue = down.Value;
 							downValue = downValue.SetBit(4, ministate_inv);
-							currentValue = currentValue.SetBit(5, (byte)downValue.BitInvAt(7));
+							currentValue = currentValue.SetBit(5, (byte)downValue.BitInvAt(6));
 							down.Value = downValue;
 							
 							// write our current value
@@ -183,7 +202,7 @@ namespace VoxelStack {
 				int count = 0;
 				
 				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
-					byte voxel = (byte)(state[i] & 0x3F);
+					byte voxel = (byte)(state[i] & STATE_MASK);
 					
 					count += indices[voxel + 1] - indices[voxel];
 				}
@@ -210,7 +229,7 @@ namespace VoxelStack {
 				// fill our vertices
 				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
 					from = MeshGenerator.FillVertices(
-										(byte)(state[i] & 0x3F), 
+										(byte)(state[i] & STATE_MASK), 
 										new MortonKey3(i), 
 										0.25f, 
 										ref newVertices, 
@@ -222,7 +241,7 @@ namespace VoxelStack {
 				// fill our normals
 				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
 					from = MeshGenerator.FillNormals(
-										(byte)(state[i] & 0x3F),
+										(byte)(state[i] & STATE_MASK),
 										ref newNormals, 
 										from);
 				}
@@ -239,7 +258,7 @@ namespace VoxelStack {
 					indices[i+5] = j+3;
 				}
 				
-				mesh.Clear(false);
+				mesh.Clear();
 				mesh.vertices = newVertices;
 				mesh.normals = newNormals;
 				mesh.triangles = indices;
