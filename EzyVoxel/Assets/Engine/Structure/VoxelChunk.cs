@@ -66,10 +66,8 @@ namespace VoxelStack {
 			
 				uint lutKey = key.Key;
 				
-				ulong substate = substates[lutKey];
+				ulong oldstate = substates[lutKey];
 				ulong newstate = value.State.Value;
-				
-				ulong differences = newstate ^ substate;
 				
 				types[lutKey] = value.Type;
 				substates[lutKey] = newstate;
@@ -78,8 +76,7 @@ namespace VoxelStack {
 				// the provided bits for the cell has changed
 				// for efficiency, if only a single cell has changed, then we
 				// update only that cell, saving on precious performance.
-				if (differences != 0) {
-					
+				if ((oldstate ^ newstate) != 0) {
 					// we will only be re-generating the bits which have
 					// been changed by the user. This change will be reflected
 					// in the final rendering
@@ -90,93 +87,88 @@ namespace VoxelStack {
 					// since we are working with values only on this cell, it means that
 					// this operation has zero branching operations.
 					for (int i = 0; i < 64; i++) {
-						// execute only for the bits that have changed
-						if (differences.BitAt(i) == 1) {
 							MortonKey3 cellLocalKey = new MortonKey3(i);
 							
 							byte ministate = (byte)newstate.BitAt(i);
-							
 							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
-							
 							uint mKey = cellOffsetKey.Key;
-							byte cellValue = state[mKey];
-							
-							//Debug.Log("before1 - " + state[mKey] + " " + state[mKey].BitString());
 							
 							// set the state of the cell, if it was enabled or disabled
-							state[mKey] = cellValue.SetBit(SUBVOXEL_PRIMARY_INDEX, ministate);
-							
-							//Debug.Log("after1 - " + state[mKey] + " " + state[mKey].BitString());
-						}
+							state[mKey] = state[mKey].SetBit(SUBVOXEL_PRIMARY_INDEX, ministate);
 					}
 					
 					// second pass, we modify the LUT values so everything renders
 					// correctly.
 					for (int i = 0; i < 64; i++) {
 						// execute only for the bits that have changed
-						if (differences.BitAt(i) == 1) {
-							MortonKey3 cellLocalKey = new MortonKey3(i);
-							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
-							// our morton keys for the neighbouring cells
-							NeighbourState current = this[cellOffsetKey];
-							
-							byte currentValue = current.Value;
-							
-							//Debug.Log("before2 - " + currentValue + " " + currentValue.BitString());
-							
-							// this could be ON (inserted) or OFF (removed)
-							byte ministate_inv = (byte)currentValue.BitInvAt(SUBVOXEL_PRIMARY_INDEX);
-							byte ministate = (byte)currentValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
-							
-							// FRONT - Neighbour state can be from another cell group
-							NeighbourState front = this[cellOffsetKey.DecZ()];
-							byte frontValue = front.Value;
-							//Debug.Log(frontValue.BitString());
-							//frontValue = frontValue.SetBit(1, ministate_inv);
-							//Debug.Log(frontValue.BitString());
-							currentValue = currentValue.SetBit(0, (byte)(frontValue.BitInvAt(SUBVOXEL_PRIMARY_INDEX) ^ ministate_inv));
-							//front.Value = frontValue;
-							
-							// BACK - Neighbour state can be from another cell group
-							NeighbourState back = this[cellOffsetKey.IncZ()];
-							byte backValue = back.Value;
-							//backValue = backValue.SetBit(0, ministate_inv);
-							currentValue = currentValue.SetBit(1, (byte)(backValue.BitInvAt(SUBVOXEL_PRIMARY_INDEX) ^ ministate_inv));
-							//back.Value = backValue;
-							
-							// LEFT - Neighbour state can be from another cell group
-							NeighbourState left = this[cellOffsetKey.DecX()];
-							byte leftValue = left.Value;
-							//leftValue = leftValue.SetBit(3, ministate_inv);
-							currentValue = currentValue.SetBit(2, (byte)(leftValue.BitInvAt(SUBVOXEL_PRIMARY_INDEX) ^ ministate_inv));
-							//left.Value = leftValue;
-							
-							// RIGHT- Neighbour state can be from another cell group
-							NeighbourState right = this[cellOffsetKey.IncX()];
-							byte rightValue = right.Value;
-							//rightValue = rightValue.SetBit(2, ministate_inv);
-							currentValue = currentValue.SetBit(3, (byte)(rightValue.BitInvAt(SUBVOXEL_PRIMARY_INDEX) ^ ministate_inv));
-							//right.Value = rightValue;
-							
-							// UP - Neighbour state can be from another cell group
-							NeighbourState up = this[cellOffsetKey.IncY()];
-							byte upValue = up.Value;
-							//upValue = upValue.SetBit(5, ministate_inv);
-							currentValue = currentValue.SetBit(4, (byte)(upValue.BitInvAt(SUBVOXEL_PRIMARY_INDEX) ^ ministate_inv));
-							//up.Value = upValue;
-							
-							// DOWN - Neighbour state can be from another cell group
-							NeighbourState down = this[cellOffsetKey.DecY()];
-							byte downValue = down.Value;
-							//downValue = downValue.SetBit(4, ministate_inv);
-							currentValue = currentValue.SetBit(5, (byte)(downValue.BitInvAt(SUBVOXEL_PRIMARY_INDEX) ^ ministate_inv));
-							//down.Value = downValue;
-							
-							//Debug.Log("after2 - " + currentValue + " " + currentValue.BitString());
-							
-							// write our current value
-							current.Value = currentValue;
-						}
+						MortonKey3 cellLocalKey = new MortonKey3(i);
+						MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
+						
+						// our morton keys for the neighbouring cells
+						NeighbourState current = this[cellOffsetKey];
+						
+						byte currentValue = current.Value;
+						
+						// this could be ON (inserted) or OFF (removed)
+						byte ministate_inv = (byte)currentValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+						byte ministate = (byte)(1 - ministate_inv);
+						
+						// FRONT - Neighbour state can be from another cell group
+						NeighbourState front = this[cellOffsetKey.DecZ()];
+						byte frontValue = front.Value;
+						int frontPrim = frontValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+						byte frontPrimIn = (byte)(frontPrim ^ ministate_inv);
+						byte frontPrimOu = (byte)(frontPrim ^ ministate_inv);
+						currentValue = currentValue.SetBit(0, frontPrimIn);
+						front.Value = frontValue.SetBit(1, frontPrimOu);
+						
+						// BACK - Neighbour state can be from another cell group
+						NeighbourState back = this[cellOffsetKey.IncZ()];
+						byte backValue = back.Value;
+						int backPrim = backValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+						byte backPrimIn = (byte)(backPrim ^ ministate_inv);
+						byte backPrimOu = (byte)(backPrim ^ ministate_inv);
+						currentValue = currentValue.SetBit(1, backPrimIn);
+						back.Value = backValue.SetBit(0, backPrimOu);
+						
+						// LEFT - Neighbour state can be from another cell group
+						NeighbourState left = this[cellOffsetKey.DecX()];
+						byte leftValue = left.Value;
+						int leftPrim = leftValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+						byte leftPrimIn = (byte)(leftPrim ^ ministate_inv);
+						byte leftPrimOu = (byte)(leftPrim ^ ministate_inv);
+						currentValue = currentValue.SetBit(2, leftPrimIn);
+						left.Value = leftValue.SetBit(3, leftPrimOu);
+						
+						// RIGHT- Neighbour state can be from another cell group
+						NeighbourState right = this[cellOffsetKey.IncX()];
+						byte rightValue = right.Value;
+						int rightPrim = rightValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+						byte rightPrimIn = (byte)(rightPrim ^ ministate_inv);
+						byte rightPrimOu = (byte)(rightPrim ^ ministate_inv);
+						currentValue = currentValue.SetBit(3, rightPrimIn);
+						right.Value = rightValue.SetBit(2, rightPrimOu);
+						
+						// UP - Neighbour state can be from another cell group
+						NeighbourState up = this[cellOffsetKey.IncY()];
+						byte upValue = up.Value;
+						int upPrim = upValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+						byte upPrimIn = (byte)(upPrim ^ ministate_inv);
+						byte upPrimOu = (byte)(upPrim ^ ministate_inv);
+						currentValue = currentValue.SetBit(4, upPrimIn);
+						up.Value = upValue.SetBit(5, upPrimOu);
+						
+						// DOWN - Neighbour state can be from another cell group
+						NeighbourState down = this[cellOffsetKey.DecY()];
+						byte downValue = down.Value;
+						int downPrim = downValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+						byte downPrimIn = (byte)(downPrim ^ ministate_inv);
+						byte downPrimOu = (byte)(downPrim ^ ministate_inv);
+						currentValue = currentValue.SetBit(5, downPrimIn);
+						down.Value = downValue.SetBit(4, downPrimOu);
+						
+						// write our current value
+						current.Value = currentValue;
 					}
 					
 					isDirty = true;
