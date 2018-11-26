@@ -54,10 +54,7 @@ namespace VoxelStackDebug {
 				chunk = new VoxelChunk();
 			}
 			
-			//chunk[1,1,1] = new Voxel(1, SubVoxel.BOX_BOTTOM_HALF);
-			chunk[1,1,1] = new Voxel(1, SubVoxel.BOX);
-			chunk[1,1,1] = new Voxel(1, SubVoxel.BOX_BOTTOM_HALF);
-			/*
+			chunk[1,1,1] = new Voxel(1, styles[0]);
 			chunk[1,2,1] = new Voxel(1, styles[1]);
 			chunk[1,1,2] = new Voxel(1, styles[2]);
 			chunk[1,2,2] = new Voxel(1, styles[3]);
@@ -65,7 +62,6 @@ namespace VoxelStackDebug {
 			chunk[2,2,1] = new Voxel(1, styles[5]);
 			chunk[2,1,2] = new Voxel(1, styles[6]);
 			chunk[2,1,1] = new Voxel(1, styles[7]);
-			*/
 
 			MeshFilter filter = gameObject.GetComponent<MeshFilter>();
 

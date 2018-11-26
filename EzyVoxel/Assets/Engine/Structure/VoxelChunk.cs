@@ -79,6 +79,8 @@ namespace VoxelStack {
 				ulong oldstate = substates[lutKey];
 				ulong newstate = value.State.Value;
 				
+				ulong differences = oldstate ^ newstate;
+				
 				types[lutKey] = value.Type;
 				substates[lutKey] = newstate;
 				
@@ -97,86 +99,89 @@ namespace VoxelStack {
 					// since we are working with values only on this cell, it means that
 					// this operation has zero branching operations.
 					for (int i = 0; i < 64; i++) {
-						MortonKey3 cellLocalKey = new MortonKey3(i);
-						
-						byte ministate = (byte)newstate.BitAt(i);
-						MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
-						uint mKey = cellOffsetKey.Key;
-						
-						// set the state of the cell, if it was enabled or disabled
-						state[mKey] = state[mKey].SetBit(SUBVOXEL_PRIMARY_INDEX, ministate);
-						//state[mKey] = STATE_ZERO.SetBit(SUBVOXEL_PRIMARY_INDEX, ministate);
+						if (differences.BitAt(i) == 1) {
+							MortonKey3 cellLocalKey = new MortonKey3(i);
+							
+							byte ministate = (byte)newstate.BitAt(i);
+							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
+							uint mKey = cellOffsetKey.Key;
+							
+							// set the state of the cell, if it was enabled or disabled
+							state[mKey] = state[mKey].SetBit(SUBVOXEL_PRIMARY_INDEX, ministate);
+						}
 					}
 					
 					// second pass, we modify the LUT values so everything renders
 					// correctly.
 					for (int i = 0; i < 64; i++) {
-						// execute only for the bits that have changed
-						MortonKey3 cellLocalKey = new MortonKey3(i);
-						MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
-						
-						// our morton keys for the neighbouring cells
-						NeighbourState current = this[cellOffsetKey];
-						
-						byte currentValue = current.Value;
-						
-						// this could be ON (inserted) or OFF (removed)
-						int ministate = currentValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
-						
-						// FRONT - Neighbour state can be from another cell group
-						NeighbourState front = this[cellOffsetKey.DecZ()];
-						byte frontValue = front.Value;
-						int frontState = frontValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
-						int frontCross = ministate ^ frontState;
-						
-						// BACK - Neighbour state can be from another cell group
-						NeighbourState back = this[cellOffsetKey.IncZ()];
-						byte backValue = back.Value;
-						int backState = backValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
-						int backCross = ministate ^ backState;
-						
-						// LEFT - Neighbour state can be from another cell group
-						NeighbourState left = this[cellOffsetKey.DecX()];
-						byte leftValue = left.Value;
-						int leftState = leftValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
-						int leftCross = ministate ^ leftState;
-						
-						// RIGHT- Neighbour state can be from another cell group
-						NeighbourState right = this[cellOffsetKey.IncX()];
-						byte rightValue = right.Value;
-						int rightState = rightValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
-						int rightCross = ministate ^ rightState;
-						
-						// UP - Neighbour state can be from another cell group
-						NeighbourState up = this[cellOffsetKey.IncY()];
-						byte upValue = up.Value;
-						int upState = upValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
-						int upCross = ministate ^ upState;
-						
-						// DOWN - Neighbour state can be from another cell group
-						NeighbourState down = this[cellOffsetKey.DecY()];
-						byte downValue = down.Value;
-						int downState = downValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
-						int downCross = ministate ^ downState;
-						
-						// set all the neighbouring data states - these are used for rendering
-						front.Value = frontValue.SetBit(SUBVOXEL_BACK_INDEX, frontState & frontCross);
-						back.Value = backValue.SetBit(SUBVOXEL_FRONT_INDEX, backState & backCross);
-						right.Value = rightValue.SetBit(SUBVOXEL_LEFT_INDEX, rightState & rightCross);
-						left.Value = leftValue.SetBit(SUBVOXEL_RIGHT_INDEX, leftState & leftCross);
-						up.Value = upValue.SetBit(SUBVOXEL_DOWN_INDEX, upState & upCross);
-						down.Value = downValue.SetBit(SUBVOXEL_UP_INDEX, downState & downCross);
-						
-						// set all the current subvoxel data states - these are used for rendering
-						currentValue = currentValue.SetBit(SUBVOXEL_FRONT_INDEX, ministate & frontCross);
-						currentValue = currentValue.SetBit(SUBVOXEL_BACK_INDEX, ministate & backCross);
-						currentValue = currentValue.SetBit(SUBVOXEL_LEFT_INDEX, ministate & leftCross);
-						currentValue = currentValue.SetBit(SUBVOXEL_RIGHT_INDEX, ministate & rightCross);
-						currentValue = currentValue.SetBit(SUBVOXEL_UP_INDEX, ministate & upCross);
-						currentValue = currentValue.SetBit(SUBVOXEL_DOWN_INDEX, ministate & downCross);
-						
-						// write our current value
-						current.Value = currentValue;
+						if (differences.BitAt(i) == 1) {
+							// execute only for the bits that have changed
+							MortonKey3 cellLocalKey = new MortonKey3(i);
+							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
+							
+							// our morton keys for the neighbouring cells
+							NeighbourState current = this[cellOffsetKey];
+							
+							byte currentValue = current.Value;
+							
+							// this could be ON (inserted) or OFF (removed)
+							int ministate = currentValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+							
+							// FRONT - Neighbour state can be from another cell group
+							NeighbourState front = this[cellOffsetKey.DecZ()];
+							byte frontValue = front.Value;
+							int frontState = frontValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+							int frontCross = ministate ^ frontState;
+							
+							// BACK - Neighbour state can be from another cell group
+							NeighbourState back = this[cellOffsetKey.IncZ()];
+							byte backValue = back.Value;
+							int backState = backValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+							int backCross = ministate ^ backState;
+							
+							// LEFT - Neighbour state can be from another cell group
+							NeighbourState left = this[cellOffsetKey.DecX()];
+							byte leftValue = left.Value;
+							int leftState = leftValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+							int leftCross = ministate ^ leftState;
+							
+							// RIGHT- Neighbour state can be from another cell group
+							NeighbourState right = this[cellOffsetKey.IncX()];
+							byte rightValue = right.Value;
+							int rightState = rightValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+							int rightCross = ministate ^ rightState;
+							
+							// UP - Neighbour state can be from another cell group
+							NeighbourState up = this[cellOffsetKey.IncY()];
+							byte upValue = up.Value;
+							int upState = upValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+							int upCross = ministate ^ upState;
+							
+							// DOWN - Neighbour state can be from another cell group
+							NeighbourState down = this[cellOffsetKey.DecY()];
+							byte downValue = down.Value;
+							int downState = downValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
+							int downCross = ministate ^ downState;
+							
+							// set all the neighbouring data states - these are used for rendering
+							front.Value = frontValue.SetBit(SUBVOXEL_BACK_INDEX, frontState & frontCross);
+							back.Value = backValue.SetBit(SUBVOXEL_FRONT_INDEX, backState & backCross);
+							right.Value = rightValue.SetBit(SUBVOXEL_LEFT_INDEX, rightState & rightCross);
+							left.Value = leftValue.SetBit(SUBVOXEL_RIGHT_INDEX, leftState & leftCross);
+							up.Value = upValue.SetBit(SUBVOXEL_DOWN_INDEX, upState & upCross);
+							down.Value = downValue.SetBit(SUBVOXEL_UP_INDEX, downState & downCross);
+							
+							// set all the current subvoxel data states - these are used for rendering
+							currentValue = currentValue.SetBit(SUBVOXEL_FRONT_INDEX, ministate & frontCross);
+							currentValue = currentValue.SetBit(SUBVOXEL_BACK_INDEX, ministate & backCross);
+							currentValue = currentValue.SetBit(SUBVOXEL_LEFT_INDEX, ministate & leftCross);
+							currentValue = currentValue.SetBit(SUBVOXEL_RIGHT_INDEX, ministate & rightCross);
+							currentValue = currentValue.SetBit(SUBVOXEL_UP_INDEX, ministate & upCross);
+							currentValue = currentValue.SetBit(SUBVOXEL_DOWN_INDEX, ministate & downCross);
+							
+							// write our current value
+							current.Value = currentValue;
+						}
 					}
 					
 					isDirty = true;
