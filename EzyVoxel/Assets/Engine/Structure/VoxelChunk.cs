@@ -24,19 +24,22 @@ namespace VoxelStack {
 		public const uint CHUNK_SIZE = 4;
 		
 		// subvoxel indices - these rep
-		public const int SUBVOXEL_PRIMARY_INDEX = 6;
 		public const int SUBVOXEL_FRONT_INDEX = 0;
 		public const int SUBVOXEL_BACK_INDEX = 1;
 		public const int SUBVOXEL_LEFT_INDEX = 2;
 		public const int SUBVOXEL_RIGHT_INDEX = 3;
 		public const int SUBVOXEL_UP_INDEX = 4;
 		public const int SUBVOXEL_DOWN_INDEX = 5;
+		public const int SUBVOXEL_PRIMARY_INDEX = 6;
 		
-		public const uint STATES_TOTAL_LEN = SUBVOXELS_PER_VOXEL * CHUNK_VOXELS;
 		public const uint CHUNK_VOXELS = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+		public const uint STATES_TOTAL_LEN = (SUBVOXELS_PER_VOXEL / 4) * CHUNK_VOXELS;
 		
+		// out of the 8 bits of data per subvoxel, we only
+		// use 6. The others should be ignored for LUT purposes.
 		public const int STATE_MASK = 0x3F;
 		
+		// the completly clean Zero State for a single subvoxel
 		public const byte STATE_ZERO = 0;
 
 		// the states which are used to figure out which 
@@ -67,14 +70,14 @@ namespace VoxelStack {
 		public Voxel this[uint x, uint y, uint z] {
 			get {
 				MortonKey3 key = new MortonKey3(x, y, z);
-				uint lutKey = key.Key;
+				uint lutKey = key.key;
 				
 				return new Voxel(types[lutKey], substates[lutKey]);
 			}
 			set {
 				MortonKey3 key = new MortonKey3(x, y, z);
 			
-				uint lutKey = key.Key;
+				uint lutKey = key.key;
 				
 				ulong oldstate = substates[lutKey];
 				ulong newstate = value.State.Value;
@@ -88,7 +91,7 @@ namespace VoxelStack {
 				// the provided bits for the cell has changed
 				// for efficiency, if only a single cell has changed, then we
 				// update only that cell, saving on precious performance.
-				if ((oldstate ^ newstate) != 0) {
+				if (differences != 0) {
 					// we will only be re-generating the bits which have
 					// been changed by the user. This change will be reflected
 					// in the final rendering
@@ -97,14 +100,15 @@ namespace VoxelStack {
 					// first pass, we set the switch for our subvoxels so the next
 					// pass is working with the correct data.
 					// since we are working with values only on this cell, it means that
-					// this operation has zero branching operations.
+					// this operation has only one branching operation (to check if cell
+					// has changed).
 					for (int i = 0; i < 64; i++) {
 						if (differences.BitAt(i) == 1) {
 							MortonKey3 cellLocalKey = new MortonKey3(i);
 							
 							byte ministate = (byte)newstate.BitAt(i);
 							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
-							uint mKey = cellOffsetKey.Key;
+							uint mKey = cellOffsetKey.key;
 							
 							// set the state of the cell, if it was enabled or disabled
 							state[mKey] = state[mKey].SetBit(SUBVOXEL_PRIMARY_INDEX, ministate);
@@ -114,6 +118,8 @@ namespace VoxelStack {
 					// second pass, we modify the LUT values so everything renders
 					// correctly.
 					for (int i = 0; i < 64; i++) {
+						// branch op to ensure that only the cells that have changed
+						// will proceed
 						if (differences.BitAt(i) == 1) {
 							// execute only for the bits that have changed
 							MortonKey3 cellLocalKey = new MortonKey3(i);
@@ -127,38 +133,39 @@ namespace VoxelStack {
 							// this could be ON (inserted) or OFF (removed)
 							int ministate = currentValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
 							
-							// FRONT - Neighbour state can be from another cell group
 							NeighbourState front = this[cellOffsetKey.DecZ()];
+							NeighbourState back = this[cellOffsetKey.IncZ()];
+							NeighbourState left = this[cellOffsetKey.DecX()];
+							NeighbourState right = this[cellOffsetKey.IncX()];
+							NeighbourState up = this[cellOffsetKey.IncY()];
+							NeighbourState down = this[cellOffsetKey.DecY()];
+							
+							// FRONT - Neighbour state can be from another cell group
 							byte frontValue = front.Value;
 							int frontState = frontValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
 							int frontCross = ministate ^ frontState;
 							
 							// BACK - Neighbour state can be from another cell group
-							NeighbourState back = this[cellOffsetKey.IncZ()];
 							byte backValue = back.Value;
 							int backState = backValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
 							int backCross = ministate ^ backState;
 							
 							// LEFT - Neighbour state can be from another cell group
-							NeighbourState left = this[cellOffsetKey.DecX()];
 							byte leftValue = left.Value;
 							int leftState = leftValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
 							int leftCross = ministate ^ leftState;
 							
 							// RIGHT- Neighbour state can be from another cell group
-							NeighbourState right = this[cellOffsetKey.IncX()];
 							byte rightValue = right.Value;
 							int rightState = rightValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
 							int rightCross = ministate ^ rightState;
 							
 							// UP - Neighbour state can be from another cell group
-							NeighbourState up = this[cellOffsetKey.IncY()];
 							byte upValue = up.Value;
 							int upState = upValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
 							int upCross = ministate ^ upState;
 							
 							// DOWN - Neighbour state can be from another cell group
-							NeighbourState down = this[cellOffsetKey.DecY()];
 							byte downValue = down.Value;
 							int downState = downValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
 							int downCross = ministate ^ downState;
@@ -196,7 +203,13 @@ namespace VoxelStack {
 		 */
 		NeighbourState this[MortonKey3 key] {
 			get {
-				return new NeighbourState(state, key.Key);
+				uint subkey = key.key;
+				
+				if (subkey < STATES_TOTAL_LEN) {
+					return new NeighbourState(state, subkey);
+				}
+				
+				return new NeighbourState();
 			}
 		}
 		
