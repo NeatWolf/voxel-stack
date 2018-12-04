@@ -19,9 +19,10 @@ namespace VoxelStack {
 	 * - - 1 x 64 bits for the Voxel States
 	 * - - 64 x 8 bits for the Voxel Neighbour States
 	 */
-	public sealed class VoxelChunk {
+	public class VoxelChunk {
 		public const uint SUBVOXELS_PER_VOXEL = 64;
 		public const uint CHUNK_SIZE = 4;
+		public const int STATES_PER_REF = 4;
 		
 		// subvoxel indices - these rep
 		public const int SUBVOXEL_FRONT_INDEX = 0;
@@ -33,7 +34,7 @@ namespace VoxelStack {
 		public const int SUBVOXEL_PRIMARY_INDEX = 6;
 		
 		public const uint CHUNK_VOXELS = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-		public const uint STATES_TOTAL_LEN = (SUBVOXELS_PER_VOXEL / 4) * CHUNK_VOXELS;
+		public const uint STATES_TOTAL_LEN = (SUBVOXELS_PER_VOXEL / STATES_PER_REF) * CHUNK_VOXELS;
 		
 		// out of the 8 bits of data per subvoxel, we only
 		// use 6. The others should be ignored for LUT purposes.
@@ -44,7 +45,7 @@ namespace VoxelStack {
 
 		// the states which are used to figure out which 
 		// neighbour data to render/draw
-		readonly byte[] state;
+		readonly int[] state;
 
 		// the voxel type, which is a 16 bit unsigned short
 		readonly ushort[] types;
@@ -54,11 +55,49 @@ namespace VoxelStack {
 		
 		int vertexNumber = -1;
 		bool isDirty = true;
+		
+		WorldChunk parent;
+		MortonKey3 localKey;
 
 		public VoxelChunk() {
-			state = new byte[STATES_TOTAL_LEN];
+			state = new int[STATES_TOTAL_LEN];
 			types = new ushort[CHUNK_VOXELS];
 			substates = new ulong[CHUNK_VOXELS];
+		}
+		
+		public VoxelChunk(int len) {
+			state = new int[len];
+			types = new ushort[len];
+			substates = new ulong[len];
+		}
+		
+		public void Attach(WorldChunk parent, MortonKey3 localKey) {
+			this.parent = parent;
+			this.localKey = localKey;
+		}
+		
+		public void Detach() {
+			parent = null;
+		}
+		
+		public MortonKey3 LocalKey {
+			get {
+				return localKey;
+			}
+		}
+		
+		/**
+		 * Fill the entire chunk with the provided Voxel
+		 * data type.
+		 */
+		public void Fill(Voxel voxel) {
+			for (uint x = 0; x < CHUNK_SIZE; x++) {
+				for (uint y = 0; y < CHUNK_SIZE; y++) {
+					for (uint z = 0; z < CHUNK_SIZE; z++) {
+						this[x,y,z] = voxel;
+					}
+				} 
+			}
 		}
 		
 		/**
@@ -106,12 +145,13 @@ namespace VoxelStack {
 						if (differences.BitAt(i) == 1) {
 							MortonKey3 cellLocalKey = new MortonKey3(i);
 							
-							byte ministate = (byte)newstate.BitAt(i);
+							int ministate = newstate.BitAt(i);
 							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
-							uint mKey = cellOffsetKey.key;
+							int mKey = (int)cellOffsetKey.key;
 							
-							// set the state of the cell, if it was enabled or disabled
-							state[mKey] = state[mKey].SetBit(SUBVOXEL_PRIMARY_INDEX, ministate);
+							byte originalValue = state.ByteAt(mKey);
+							
+							state.SetByteAt(originalValue.SetBit(SUBVOXEL_PRIMARY_INDEX, ministate), mKey);
 						}
 					}
 					
@@ -126,19 +166,19 @@ namespace VoxelStack {
 							MortonKey3 cellOffsetKey = cellLocalKey + offsetKey;
 							
 							// our morton keys for the neighbouring cells
-							NeighbourState current = this[cellOffsetKey];
+							NeighbourState current = GetCurrent(cellOffsetKey);
 							
 							byte currentValue = current.Value;
 							
 							// this could be ON (inserted) or OFF (removed)
 							int ministate = currentValue.BitAt(SUBVOXEL_PRIMARY_INDEX);
 							
-							NeighbourState front = this[cellOffsetKey.DecZ()];
-							NeighbourState back = this[cellOffsetKey.IncZ()];
-							NeighbourState left = this[cellOffsetKey.DecX()];
-							NeighbourState right = this[cellOffsetKey.IncX()];
-							NeighbourState up = this[cellOffsetKey.IncY()];
-							NeighbourState down = this[cellOffsetKey.DecY()];
+							NeighbourState front = GetFrontState(cellOffsetKey);
+							NeighbourState back = GetBackState(cellOffsetKey);
+							NeighbourState left = GetLeftState(cellOffsetKey);
+							NeighbourState right = GetRightState(cellOffsetKey);
+							NeighbourState up = GetUpState(cellOffsetKey);
+							NeighbourState down = GetDownState(cellOffsetKey);
 							
 							// FRONT - Neighbour state can be from another cell group
 							byte frontValue = front.Value;
@@ -197,20 +237,44 @@ namespace VoxelStack {
 			}
 		}
 		
-		/**
-		 * Given a morton key, grab a neighbouring state which can be updated
-		 * for new rendering
-		 */
-		NeighbourState this[MortonKey3 key] {
-			get {
-				uint subkey = key.key;
-				
-				if (subkey < STATES_TOTAL_LEN) {
-					return new NeighbourState(state, subkey);
-				}
-				
-				return new NeighbourState();
-			}
+		public virtual NeighbourState GetCurrent(MortonKey3 key) {
+			return new NeighbourState(state, key.key);
+		}
+
+		NeighbourState GetUpState(MortonKey3 key) {
+			return key.y < 15 ? 
+			new NeighbourState(state, key.IncY().key) : 
+			parent.GetUpStateFrom(localKey).GetCurrent(new MortonKey3(key.x, 0, key.z));
+		}
+		
+		NeighbourState GetDownState(MortonKey3 key) {
+			return key.y > 0 ? 
+			new NeighbourState(state, key.DecY().key) : 
+			parent.GetDownStateFrom(localKey).GetCurrent(new MortonKey3(key.x, 15, key.z));
+		}
+		
+		NeighbourState GetRightState(MortonKey3 key) {
+			return key.x < 15 ? 
+			new NeighbourState(state, key.IncX().key) : 
+			parent.GetRightStateFrom(localKey).GetCurrent(new MortonKey3(0, key.y, key.z));
+		}
+		
+		NeighbourState GetLeftState(MortonKey3 key) {
+			return key.x > 0 ? 
+			new NeighbourState(state, key.DecX().key) : 
+			parent.GetLeftStateFrom(localKey).GetCurrent(new MortonKey3(15, key.y, key.z));
+		}
+		
+		NeighbourState GetBackState(MortonKey3 key) {
+			return key.z < 15 ? 
+			new NeighbourState(state, key.IncZ().key) : 
+			parent.GetBackStateFrom(localKey).GetCurrent(new MortonKey3(key.x, key.y, 0));
+		}
+		
+		NeighbourState GetFrontState(MortonKey3 key) {
+			return key.z > 0 ? 
+			new NeighbourState(state, key.DecZ().key) : 
+			parent.GetFrontStateFrom(localKey).GetCurrent(new MortonKey3(key.x, key.y, 15));
 		}
 		
 		/**
@@ -231,8 +295,8 @@ namespace VoxelStack {
 				
 				int count = 0;
 				
-				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
-					byte voxel = (byte)(state[i] & STATE_MASK);
+				for (int i = 0; i < STATES_TOTAL_LEN * STATES_PER_REF; i++) {
+					byte voxel = (byte)(state.ByteAt(i) & STATE_MASK);
 					
 					count += indices[voxel + 1] - indices[voxel];
 				}
@@ -257,23 +321,21 @@ namespace VoxelStack {
 				int from = 0;
 				
 				// fill our vertices
-				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
-					from = MeshGenerator.FillVertices(
-										(byte)(state[i] & STATE_MASK), 
-										new MortonKey3(i), 
-										0.25f, 
-										ref newVertices, 
-										from);
+				for (int i = 0; i < STATES_TOTAL_LEN * STATES_PER_REF; i++) {
+					MortonKey3 m = new MortonKey3(i);	
+					byte voxel = (byte)(state.ByteAt((int)m.key) & STATE_MASK);
+					
+					from = MeshGenerator.FillVertices(voxel, m, 0.25f, ref newVertices, from);
 				}
 				
 				from = 0;
 				
 				// fill our normals
-				for (int i = 0; i < STATES_TOTAL_LEN; i++) {
-					from = MeshGenerator.FillNormals(
-										(byte)(state[i] & STATE_MASK),
-										ref newNormals, 
-										from);
+				for (int i = 0; i < STATES_TOTAL_LEN * STATES_PER_REF; i++) {
+					MortonKey3 m = new MortonKey3(i);	
+					byte voxel = (byte)(state.ByteAt((int)m.key) & STATE_MASK);
+					
+					from = MeshGenerator.FillNormals(voxel, ref newNormals, from);
 				}
 				
 				int len = indices.Length;
