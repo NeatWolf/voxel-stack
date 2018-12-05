@@ -31,7 +31,7 @@ namespace VoxelStack {
 		#endif
 
 		void Start() {
-			if (chunk != null) {
+			if (chunk == null) {
 				chunk = new VoxelChunk();
 			}
 			
@@ -74,7 +74,7 @@ namespace VoxelStack {
 					}
 				#endif
 			
-				//chunk.IsDirty = false;
+				chunk.IsDirty = false;
 			}
 		}
 
