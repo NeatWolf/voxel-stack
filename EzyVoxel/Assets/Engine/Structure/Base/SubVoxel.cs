@@ -138,6 +138,8 @@ namespace VoxelStack {
 		public const int SET = 1;
 		public const int UNSET = 0;
 		
+		// our actual state of this subvoxel, a possible of 2^64 different
+		// types, which will be represented in the final rendered geometry
 		readonly ulong state;
 		
 		public SubVoxel(ulong state) {
@@ -152,7 +154,7 @@ namespace VoxelStack {
 			get {
 				#if UNITY_EDITOR || DEBUG
 					if (index < 0 || index > 63) {
-						BitDebug.Exception("Voxel[index] - index must be between 0 and 64 because Voxels only have 64 maximum states, was " + index);
+						BitDebug.Exception("SubVoxel[index] - index must be between 0 and 64 because Voxels only have 64 maximum states, was " + index);
 					}
 				#endif
 				
@@ -169,15 +171,15 @@ namespace VoxelStack {
 			get {
 				#if UNITY_EDITOR || DEBUG
 					if (x > 3 || x < 0) {
-						BitDebug.Exception("Voxel(uint, uint, uint) - array key x component must be between 0-3, was " + x);
+						BitDebug.Exception("SubVoxel(uint, uint, uint) - array key x component must be between 0-3, was " + x);
 					}
 					
 					if (y > 3 || y < 0) {
-						BitDebug.Exception("Voxel(uint, uint, uint) - array key y component must be between 0-3, was " + y);
+						BitDebug.Exception("SubVoxel(uint, uint, uint) - array key y component must be between 0-3, was " + y);
 					}
 					
 					if (z > 3 || z < 0) {
-						BitDebug.Exception("Voxel(uint, uint, uint) - array key z component must be between 0-3, was " + z);
+						BitDebug.Exception("SubVoxel(uint, uint, uint) - array key z component must be between 0-3, was " + z);
 					}
 				#endif
 				return this[(int)BitMath.EncodeMortonKey(x, y, z)];
