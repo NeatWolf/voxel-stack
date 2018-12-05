@@ -2,27 +2,141 @@
 using BitStack;
 
 namespace VoxelStack {
+	/**
+	 * Provides useful methods for modifying subvoxel data
+	 * structure such as setting/unsetting state
+	 */
+	public static class SubVoxelExtensions {
+		
+		/**
+		 * Given an unsigned x, y, z coordinate between 0 and 4, sets the provided state
+		 * and returns a new instance. NOTE this does not modify the existing value as
+		 * SubVoxel value types are all read only.
+		 *
+		 * All values are stored in morton Z Order (Z Order Curve)
+		 */
+		public static SubVoxel Set(this SubVoxel data, uint x, uint y, uint z, int value) {
+			#if UNITY_EDITOR || DEBUG
+				if (x > 3 || x < 0) {
+					BitDebug.Exception("SubVoxel.Set(uint, uint, uint, int) - morton key x component must be between 0-3, was " + x);
+				}
+				
+				if (y > 3 || y < 0) {
+					BitDebug.Exception("SubVoxel.Set(uint, uint, uint, int) - morton key y component must be between 0-3, was " + y);
+				}
+				
+				if (z > 3 || z < 0) {
+					BitDebug.Exception("SubVoxel.Set(uint, uint, uint, int) - morton key z component must be between 0-3, was " + z);
+				}
+				
+				if (value > 1 || value < 0) {
+					BitDebug.Exception("SubVoxel.Set(uint, uint, uint, int) - value must either be 1 (SubVoxel.SET) or 0 (SubVoxel.UNSET), was " + value);
+				}
+			#endif
+			return data.Set(BitMath.EncodeMortonKey(x, y, z), value);
+		}
+		
+		/**
+		 * Given a signed x, y, z coordinate between 0 and 4, sets the provided state
+		 * and returns a new instance. NOTE this does not modify the existing value as
+		 * SubVoxel value types are all read only.
+		 *
+		 * All values are stored in morton Z Order (Z Order Curve)
+		 */
+		public static SubVoxel Set(this SubVoxel data, int x, int y, int z, int value) {
+			#if UNITY_EDITOR || DEBUG
+				if (x > 3 || x < 0) {
+					BitDebug.Exception("SubVoxel.Set(int, int, int, int) - morton key x component must be between 0-3, was " + x);
+				}
+				
+				if (y > 3 || y < 0) {
+					BitDebug.Exception("SubVoxel.Set(int, int, int, int) - morton key y component must be between 0-3, was " + y);
+				}
+				
+				if (z > 3 || z < 0) {
+					BitDebug.Exception("SubVoxel.Set(int, int, int, int) - morton key z component must be between 0-3, was " + z);
+				}
+				
+				if (value > 1 || value < 0) {
+					BitDebug.Exception("SubVoxel.Set(uint, uint, uint, int) - value must either be 1 (SubVoxel.SET) or 0 (SubVoxel.UNSET) was " + value);
+				}
+			#endif
+			return data.Set(BitMath.EncodeMortonKey((uint)x,(uint)y,(uint)z), value);
+		}
+		
+		/**
+		 * Given a compited MortonKey3, sets the provided
+		 * state and returns a new instance. NOTE this does not modify the existing value as
+		 * SubVoxel value types are all read only.
+		 *
+		 * All values are stored in morton Z Order (Z Order Curve)
+		 */
+		public static SubVoxel Set(this SubVoxel data, MortonKey3 mortonKey, int value) {
+			#if UNITY_EDITOR || DEBUG
+				if (mortonKey.key > 63) {
+					BitDebug.Exception("SubVoxel.Set(MortonKey3) - morton key must be between 0-63, was " + mortonKey.key);
+				}
+				
+				if (value > 1 || value < 0) {
+					BitDebug.Exception("SubVoxel.Set(uint, uint, uint, int) - value must either be 1 (SubVoxel.SET) or 0 (SubVoxel.UNSET) was " + value);
+				}
+			#endif
+			return data.Set(mortonKey.key, value);
+		}
+		
+		/**
+		 * Given a 32 bit (10 bit 10 bit 10 bit) component Morton Key, sets the provided
+		 * state and returns a new instance. NOTE this does not modify the existing value as
+		 * SubVoxel value types are all read only.
+		 *
+		 * All values are stored in morton Z Order (Z Order Curve)
+		 */
+		public static SubVoxel Set(this SubVoxel data, uint mortonKey, int value) {
+			#if UNITY_EDITOR || DEBUG
+				if (mortonKey > 63) {
+					BitDebug.Exception("SubVoxel.Set(uint) - morton key must be between 0-63, was " + mortonKey);
+				}
+				
+				if (value > 1 || value < 0) {
+					BitDebug.Exception("SubVoxel.Set(uint, uint, uint, int) - value must either be 1 (SubVoxel.SET) or 0 (SubVoxel.UNSET) was " + value);
+				}
+			#endif
+			ulong val = data.Value;
+			
+			return new SubVoxel(val.SetBit((int)mortonKey, value));
+		}
+	}
+	
+	/**
+	 * SubVoxel is a 4x4x4 Data-Structure which effectively represents the 
+	 * "innards" of a Voxel value type. Since a possible of 64 values can be
+	 * placed, a single Voxel has a possible of 2^64 different renderable types
+	 * that can be achieved.
+	 *
+	 * Use the in-built extension methods to modify the SubVoxel Structure. SubVoxels
+	 * are lightweight value types and are read-only.
+	 */
 #if !NET_4_6
 	public struct SubVoxel : IEquatable<SubVoxel>, IEquatable<ulong> {
 #else
 	public readonly struct SubVoxel : IEquatable<SubVoxel>, IEquatable<ulong> {
 #endif
-		public const ulong STATE_MAX = ulong.MaxValue;
+		// easy access to either the FULL or ZERO states of a 
+		// subvoxel structure
+		public const ulong STATE_FULL = ulong.MaxValue;
 		public const ulong STATE_ZERO = 0;
 		
-		// interesting sub-voxel patterns which can be used
-		public const ulong BOX = STATE_MAX;
-		public const ulong BOX_HALF = 0x102040810204080;
-		public const ulong BOX_HALLOW = 0xFEFDFBF7EFDFBF7F;
-		public const ulong BOX_ODD_FILLER = 0x173F5FEE77FAFCE8;
-		public const ulong BOX_ODD_EDGE = 0xE8C0A01188050317;
-		public const ulong BOX_NO_CORNERS = 0x7FBFDFEFF7FBFDFE;
-		public const ulong BOX_ONLY_CORNERS = 0x8040201008040201;
-		public const ulong DIAGONAL = 0x8100000000000081;
-		public const ulong BOX_BOTTOM_HALF = 0xFFFF0000FFFF;
-		public const ulong BOX_TOP_HALF = 0xFFFF0000FFFF0000;
-		public const ulong BOX_BOTTOM_QUARTER = 0x333300003333;
-		public const ulong BOX_TOP_QUARTER = 0xCCCC0000CCCC0000;
+		// these are safe since SubVoxel structure is readonly and cannot
+		// be modified. Copies must be made same as every other calue type.
+		// these are equivalent to 
+		// new SubVoxel(SubVoxel.STATE_FULL) and new SubVoxel(SubVoxel.STATE_ZERO)
+		public static readonly SubVoxel FULL = new SubVoxel(STATE_FULL);
+		public static readonly SubVoxel ZERO = new SubVoxel(STATE_ZERO);
+		
+		// the only binary values which can either be set or unset
+		// for every possible subvoxel value type
+		public const int SET = 1;
+		public const int UNSET = 0;
 		
 		readonly ulong state;
 		
@@ -54,15 +168,15 @@ namespace VoxelStack {
 		public int this[uint x, uint y, uint z] {
 			get {
 				#if UNITY_EDITOR || DEBUG
-					if (x > 4 || x < 0) {
+					if (x > 3 || x < 0) {
 						BitDebug.Exception("Voxel(uint, uint, uint) - array key x component must be between 0-3, was " + x);
 					}
 					
-					if (y > 4 || y < 0) {
+					if (y > 3 || y < 0) {
 						BitDebug.Exception("Voxel(uint, uint, uint) - array key y component must be between 0-3, was " + y);
 					}
 					
-					if (z > 4 || z < 0) {
+					if (z > 3 || z < 0) {
 						BitDebug.Exception("Voxel(uint, uint, uint) - array key z component must be between 0-3, was " + z);
 					}
 				#endif
