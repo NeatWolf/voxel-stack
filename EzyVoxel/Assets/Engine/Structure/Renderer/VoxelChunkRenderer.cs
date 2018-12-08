@@ -84,11 +84,21 @@ namespace VoxelStack {
 			}
 		}
 		
-		public void Attach(WorldChunk world, MortonKey3 key) {
+		public void Attach(WorldChunk world, MortonKey3 key, Material material) {
 			chunk.Attach(world, key);
 			
 			// transform our game-object
 			gameObject.transform.position = (key * 4).Value;
+			
+			MeshFilter myFilter = gameObject.GetComponent<MeshFilter>();
+						
+			MeshRenderer myRenderer = gameObject.GetComponent<MeshRenderer>();
+					
+			if (myRenderer == null) {
+				myRenderer = gameObject.AddComponent<MeshRenderer>();
+			}
+			
+			myRenderer.material = material;
 			
 			#if UNITY_EDITOR || DEBUG
 				gameObject.name = "Chunk_" + key.x + "_" + key.y + "_" + key.z;

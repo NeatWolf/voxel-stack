@@ -1,5 +1,6 @@
 ﻿using System;
 using BitStack;
+using UnityEngine;
 
 namespace VoxelStack {
 
@@ -10,7 +11,7 @@ namespace VoxelStack {
 	 * All chunks are stored in morton z order (z order curve) and must
 	 * be accessed via a MortonKey3
 	 */
-	public class WorldChunk {
+	public sealed class WorldChunk {
 		public const int VOXEL_CHUNKS_SIZE = 4;
 		public const int VOXEL_CHUNKS = VOXEL_CHUNKS_SIZE * VOXEL_CHUNKS_SIZE * VOXEL_CHUNKS_SIZE;
 
@@ -18,8 +19,12 @@ namespace VoxelStack {
 
 		readonly VoxelChunk[] chunks;
 		
-		public WorldChunk() {
+		readonly Material material;
+		
+		public WorldChunk(Material material) {
 			chunks = new VoxelChunk[VOXEL_CHUNKS];
+			
+			this.material = material;
 		}
 		
 		public VoxelChunk this[uint x, uint y, uint z] {
@@ -39,7 +44,7 @@ namespace VoxelStack {
 				}
 				
 				VoxelChunkRenderer renderer = VoxelChunkRenderer.Pop();
-				renderer.Attach(this, key);
+				renderer.Attach(this, key, material);
 				
 				chunks[lutKey] = renderer.Chunk;
 				
@@ -51,36 +56,42 @@ namespace VoxelStack {
 			return key.y < VOXEL_CHUNKS_SIZE - 1 ? 
 			this[key.IncY()] : 
 			EMPTY_CHUNK;
+			//null;
 		}
 		
 		public VoxelChunk GetDownStateFrom(MortonKey3 key) {
 			return key.y > 0 ?
 			this[key.DecY()] :
 			EMPTY_CHUNK;
+			//null;
 		}
 		
 		public VoxelChunk GetRightStateFrom(MortonKey3 key) {
 			return key.x < VOXEL_CHUNKS_SIZE - 1 ? 
 			this[key.IncX()] :
 			EMPTY_CHUNK;
+			//null;
 		}
 		
 		public VoxelChunk GetLeftStateFrom(MortonKey3 key) {
 			return key.x > 0 ?
 			this[key.DecX()] :
 			EMPTY_CHUNK;
+			//null;
 		}
 		
 		public VoxelChunk GetBackStateFrom(MortonKey3 key) {
 			return key.z < VOXEL_CHUNKS_SIZE - 1 ? 
 			this[key.IncZ()] :
 			EMPTY_CHUNK;
+			//null;
 		}
 		
 		public VoxelChunk GetFrontStateFrom(MortonKey3 key) {
 			return key.z > 0 ?
 			this[key.DecZ()] :
 			EMPTY_CHUNK;
+			//null;
 		}
 		
 		/**
