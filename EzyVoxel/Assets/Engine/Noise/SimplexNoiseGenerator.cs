@@ -14,10 +14,12 @@ public class SimplexNoiseGenerator {
 	float onesixth = 0.166666667f;
 	int[] T;
 
-	public SimplexNoiseGenerator() {
+	public SimplexNoiseGenerator(int seed = 0) {
 		if (T == null) {
-			System.Random rand = new System.Random();
+			System.Random rand = seed == 0 ? new System.Random() : new System.Random(seed);
+			
 			T = new int[8];
+			
 			for (int q = 0; q < 8; q++) {
 				T[q] = rand.Next();
 			}

@@ -123,8 +123,8 @@ namespace VoxelStack {
 #endif
 		// easy access to either the FULL or ZERO states of a 
 		// subvoxel structure
-		public const ulong STATE_FULL = ulong.MaxValue;
 		public const ulong STATE_ZERO = 0;
+		public const ulong STATE_FULL = ~STATE_ZERO;
 		
 		// these are safe since SubVoxel structure is readonly and cannot
 		// be modified. Copies must be made same as every other calue type.
