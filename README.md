@@ -3,8 +3,9 @@
 </h3>
 
 [![Twitter: @DavidArayan](https://img.shields.io/badge/contact-@DavidArayan-blue.svg?style=flat)](https://twitter.com/DavidArayan)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/c46991d34ab9428f9cd685c4269927bb)](https://app.codacy.com/app/DavidArayan/voxel-stack?utm_source=github.com&utm_medium=referral&utm_content=DavidArayan/voxel-stack&utm_campaign=Badge_Grade_Dashboard)
 
-***
+* * *
 
 #### Open Source Voxel Framework for the Unity3D Game Engine
 
