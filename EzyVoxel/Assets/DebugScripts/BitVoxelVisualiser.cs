@@ -12,11 +12,9 @@ public class BitVoxelVisualiser : MonoBehaviour {
 
     public Text indexText;
     public Text bitText;
-
-    public Camera m_camera;
     // Start is called before the first frame update
     void Start() {
-        
+        bitvoxel = 0;
     }
 
     // Update is called once per frame
@@ -31,12 +29,10 @@ public class BitVoxelVisualiser : MonoBehaviour {
 
     private bool takeHiResShot = false;
 
-    public static string ScreenShotName(int width, int height)
+    public static string ScreenShotName(int bitvoxel)
     {
-        return string.Format("{0}/screenshots/screen_{1}x{2}_{3}.png",
-                             Application.dataPath,
-                             width, height,
-                             System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        return string.Format("{0}/screenshots/screen_{1}.png",
+                             Application.dataPath, bitvoxel);
     }
 
     public void TakeHiResShot()
@@ -44,11 +40,27 @@ public class BitVoxelVisualiser : MonoBehaviour {
         takeHiResShot = true;
     }
 
+    int counter = 33;
+
     void LateUpdate()
     {
+        counter++;
+
+        if (counter == 32) {
+            bitvoxel++;
+        }
+
         takeHiResShot |= Input.GetKeyDown("k");
         if (takeHiResShot)
         {
+            string filename = ScreenShotName(bitvoxel);
+            ScreenCapture.CaptureScreenshot(filename, 1);
+            takeHiResShot = false;
+
+            Debug.Log("Captured " + bitvoxel);
+            counter = 0;
+
+            /* 
             RenderTexture rt = new RenderTexture(resWidth, resHeight, 24);
             m_camera.targetTexture = rt;
             Texture2D screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
@@ -63,6 +75,7 @@ public class BitVoxelVisualiser : MonoBehaviour {
             System.IO.File.WriteAllBytes(filename, bytes);
             Debug.Log(string.Format("Took screenshot to: {0}", filename));
             takeHiResShot = false;
+            */
         }
     }
 
