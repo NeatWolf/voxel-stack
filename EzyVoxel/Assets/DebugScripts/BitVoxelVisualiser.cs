@@ -20,8 +20,10 @@ public class BitVoxelVisualiser : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         byte voxel = (byte)bitvoxel;
-        indexText.text = "Index  = " + voxel;
-        bitText.text = "Bits     = " + voxel.BitString();
+        if (indexText != null) {
+            indexText.text = "Index  = " + voxel;
+            bitText.text = "Bits     = " + voxel.BitString().Substring(2);
+        }
     }
 
     public int resWidth = 256;

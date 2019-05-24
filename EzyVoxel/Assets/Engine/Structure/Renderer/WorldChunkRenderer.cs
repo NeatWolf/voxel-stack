@@ -8,33 +8,30 @@ namespace VoxelStack {
 		public Material material;
 		public SimplexNoiseGenerator gen;
 
-		int count = 0;
-
 		int offsetx = 0;
 		int offsety = 0;
 		int offsetz = 0;
+
+		int tolerance = 32;
+		int voxelTolerance = 32;
+
+		bool isBlocky = false;
 
 		public int offx = 1;
 		public int offy = 1;
 		public int offz = 1;
 
-		public int tolerance = 32;
+		public int toleranceValue = 32;
+		public int voxelToleranceValue = 32;
 
-		public bool isBlocky = false;
+		public bool isBlockyValue = false;
 		
 		// Use this for initialization
 		void Start() {
 			chunk = new WorldChunk(material);
-			
 			gen = new SimplexNoiseGenerator(42);
-			
-			for (uint x = 0; x < 4; x++) {
-				for (uint y = 0; y < 4; y++) {
-					for (uint z = 0; z < 4; z++) {
-						generateForChunk(chunk[x,y,z], gen, x, y, z);
-					}
-				}
-			}
+
+            UpdateVoxelMesh();
 		}
 		
 		private void generateForChunk(VoxelChunk vchunk, SimplexNoiseGenerator generator, uint cx, uint cy, uint cz) {
@@ -71,28 +68,44 @@ namespace VoxelStack {
 				return new Voxel(1, voxel);
 			}
 			
-			return new Voxel(1, voxel.Length > 32 ? SubVoxel.FULL : SubVoxel.ZERO);
+			return new Voxel(1, voxel.Length > voxelTolerance ? SubVoxel.FULL : SubVoxel.ZERO);
 		}
 	
 		// Update is called once per frame
 		void Update() {
-			count++;
-			
-			if (count > 20) {
-				offsetx+=offx;
-				offsety+=offy;
-				offsetz+=offz;
-			
-				for (uint x = 0; x < 4; x++) {
-					for (uint y = 0; y < 4; y++) {
-						for (uint z = 0; z < 4; z++) {
-							generateForChunk(chunk[x,y,z], gen, x, y, z);
-						}
-					}
-				}
-			
-				count = 0;
+			if (CheckAndUpdateValues()) {
+                UpdateVoxelMesh();
 			}
+		}
+
+		void UpdateVoxelMesh() {
+            for (uint x = 0; x < 4; x++) {
+                for (uint y = 0; y < 4; y++) {
+                    for (uint z = 0; z < 4; z++) {
+                        generateForChunk(chunk[x, y, z], gen, x, y, z);
+                    }
+                }
+            }
+		}
+
+		bool CheckAndUpdateValues() {
+            if (offsetx != offx || 
+				offsety != offy || 
+				offsetz != offz || 
+				isBlocky != isBlockyValue ||
+				tolerance != toleranceValue ||
+				voxelTolerance != voxelToleranceValue) {
+					offsetx = offx;
+					offsety = offy;
+					offsetz = offz;
+					isBlocky = isBlockyValue;
+					tolerance = toleranceValue;
+					voxelTolerance = voxelToleranceValue;
+
+					return true;
+				}
+
+			return false;
 		}
 	}
 }
